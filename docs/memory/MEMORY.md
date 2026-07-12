@@ -70,6 +70,11 @@ Last updated: 2026-07-09
 - 2026-07-11 | enhancement | 记忆系统全面升级（BM25 + 硬截断 + 后台提取 + 对抗性测试 + 文件行走 + Cache 分层） | 详见 docs/features/memory-system.md
 
 ## Auto Memory（AI 自动记录）
+
+- 2026-07-12 | decision | itecture] 将硬编码检测和语义化命名规则系统化融入开发流程已完成。三阶段实施：Phase 1 ESLint v9+Prettier+simple-git-hooks（flat config, naming-convention, no-magic-numbers）；Phase 2 packages/shared 常量包（api/storage/http/time/error）；Phase 3 重构现有代码硬编码。现在 pnpm lint 干净通过，pre-commit hook 强制拦截不合规代码。
+
+- 2026-07-12 | architecture | 将硬编码检测和语义化命名规则系统化融入开发流程已完成。三阶段实施：Phase 1 ESLint v9+Prettier+simple-git-hooks（flat config, naming-convention, no-magic-numbers）；Phase 2 packages/shared 常量包（api/storage/http/time/error）；Phase 3 重构现有代码硬编码。现在 pnpm lint 干净通过，pre-commit hook 强制拦截不合规代码。
+
 - 2026-07-12 | decision | 2026-07-12 | decision | 提示词开发规范 — 涉及 prompt 编写/修改/优化必须先加载 prompt-engineering + prompt-engineering-patterns 技能，优化场景加 prompt-optimizer，禁止凭记忆直接编写。规范写入 AGENTS.md，ai-dev.txt 强化为强制规则。
 
 - 2026-07-12 | decision | 决策 10+ 条（API 规范、AI Agent 架构、Design Tokens 等）
@@ -93,6 +98,5 @@ Last updated: 2026-07-09
 - 2026-07-11 | decision | itecture] 记忆系统 9 项优化完成：GC mtime 修复、心跳去重、对话日志归档、段落级 BM25 分块、context-mode 桥接、跨会话知识整合、MEMORY.md 自动同步、回复前检索链指令强化
 
 - 2026-07-11 | architecture | 记忆系统 9 项优化完成：GC mtime 修复、心跳去重、对话日志归档、段落级 BM25 分块、context-mode 桥接、跨会话知识整合、MEMORY.md 自动同步、回复前检索链指令强化
-
 
 <!-- 以下由 AI 在会话中自动写入，按 YYYY-MM-DD | 类型 | 内容 格式。已有相似条目则更新，不重复。 -->

@@ -23,11 +23,12 @@
    - 过滤/关联列上是否缺少索引？
    - LLM 调用前是否有缓存？
 
-3. 可维护性：
-   - 是否遵循项目现有约定？（Vue 使用 `<script setup>`、NestJS 模块结构）
-   - 是否有应提取的重复逻辑？
-   - 错误处理是否一致？（API 使用 `{ success, data, error }` 格式）
-   - 是否有应配置化的硬编码值？
+ 3. 可维护性：
+    - 是否遵循项目现有约定？（Vue 使用 `<script setup>`、NestJS 模块结构）
+    - 是否有应提取的重复逻辑？
+    - 错误处理是否一致？（API 使用 `{ success, data, error }` 格式）
+    - 是否违反常量规范？URL/状态码/Storage Key/错误信息必须从 `@trip/shared` 引用，禁止直接硬编码
+    - 是否违反命名规范？变量 camelCase、类 PascalCase、文件 kebab-case 等
 
 4. 对抗性测试：
    - **verifier 已经执行过对抗性测试**，审查 verifier 报告中的每个发现

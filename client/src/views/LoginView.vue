@@ -1,9 +1,10 @@
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <div class="w-full max-w-sm text-center">
-    <div class="w-16 h-16 rounded-xl bg-primary text-white flex items-center justify-center text-3xl font-bold mx-auto mb-6">
+    <div
+      class="w-16 h-16 rounded-xl bg-primary text-white flex items-center justify-center text-3xl font-bold mx-auto mb-6"
+    >
       童
     </div>
     <h1 class="text-2xl font-semibold text-gray-900 mb-2">童行AI</h1>

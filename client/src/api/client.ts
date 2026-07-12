@@ -1,14 +1,15 @@
 import axios from 'axios'
+import { API_PREFIX, HTTP_STATUS, CONTENT_TYPE, TIMEOUT, ROUTES, STORAGE_KEYS } from '@trip/shared'
 import type { ApiResponse } from './types'
 
 const http = axios.create({
-  baseURL: '/api',
-  timeout: 15000,
-  headers: { 'Content-Type': 'application/json' },
+  baseURL: API_PREFIX,
+  timeout: TIMEOUT.DEFAULT_API,
+  headers: { 'Content-Type': CONTENT_TYPE.JSON },
 })
 
 http.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN)
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -18,15 +19,18 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      window.location.href = '/login'
+    if (error.response?.status === HTTP_STATUS.UNAUTHORIZED) {
+      localStorage.removeItem(STORAGE_KEYS.TOKEN)
+      window.location.href = ROUTES.LOGIN
     }
     return Promise.reject(error)
   },
 )
 
-export async function get<T>(url: string, params?: Record<string, unknown>): Promise<ApiResponse<T>> {
+export async function get<T>(
+  url: string,
+  params?: Record<string, unknown>,
+): Promise<ApiResponse<T>> {
   const { data } = await http.get<ApiResponse<T>>(url, { params })
   return data
 }

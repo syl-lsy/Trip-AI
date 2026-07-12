@@ -2,7 +2,7 @@
 goal: 将"全局不能硬编码"和"语义化命名"规则系统化融入开发流程
 version: 1.0
 date_created: 2026-07-12
-status: Planned
+status: Completed
 tags: infrastructure, coding-standards, eslint, constants, naming-conventions
 ---
 
@@ -30,42 +30,42 @@ tags: infrastructure, coding-standards, eslint, constants, naming-conventions
 
 - GOAL-001: 安装并配置 ESLint v9 (flat config) + Prettier + simple-git-hooks，实现 lint 自动检查 + pre-commit 强制拦截
 
-| Task | Description | Completed | Date |
-|------|-------------|-----------|------|
-| TASK-001 | 安装 eslint v9、@eslint/js、typescript-eslint、eslint-plugin-prettier、prettier、simple-git-hooks、lint-staged 到 workspace root | | |
-| TASK-002 | 创建 `eslint.config.mjs` — flat config + @eslint/js recommended + typescript-eslint + Prettier | | |
-| TASK-003 | 配置核心规则：no-magic-numbers、@typescript-eslint/naming-convention、prefer-const、no-var | | |
-| TASK-004 | 创建 `.prettierrc.json` — 单引号、trailingComma all、printWidth 100 | | |
-| TASK-005 | 根 package.json 配置 simple-git-hooks + lint-staged | | |
-| TASK-006 | 运行 npx simple-git-hooks；postinstall 中加 simple-git-hooks | | |
-| TASK-007 | 补充 lint:fix + format scripts | | |
-| TASK-008 | 测试：pnpm lint 报 magic number 错误；pre-commit 拦截 | | |
+| Task     | Description                                                                                                                      | Completed | Date |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------- | --------- | ---- |
+| TASK-001 | 安装 eslint v9、@eslint/js、typescript-eslint、eslint-plugin-prettier、prettier、simple-git-hooks、lint-staged 到 workspace root |           |      |
+| TASK-002 | 创建 `eslint.config.mjs` — flat config + @eslint/js recommended + typescript-eslint + Prettier                                   |           |      |
+| TASK-003 | 配置核心规则：no-magic-numbers、@typescript-eslint/naming-convention、prefer-const、no-var                                       |           |      |
+| TASK-004 | 创建 `.prettierrc.json` — 单引号、trailingComma all、printWidth 100                                                              |           |      |
+| TASK-005 | 根 package.json 配置 simple-git-hooks + lint-staged                                                                              |           |      |
+| TASK-006 | 运行 npx simple-git-hooks；postinstall 中加 simple-git-hooks                                                                     |           |      |
+| TASK-007 | 补充 lint:fix + format scripts                                                                                                   |           |      |
+| TASK-008 | 测试：pnpm lint 报 magic number 错误；pre-commit 拦截                                                                            |           |      |
 
 ### Phase 2 — 共享常量包
 
 - GOAL-002: 创建 packages/shared，集中管理常量；更新 AGENTS.md + agent prompts
 
-| Task | Description | Completed | Date |
-|------|-------------|-----------|------|
-| TASK-009 | 创建 packages/shared/package.json、tsconfig.json、src/index.ts | | |
-| TASK-010 | 更新 pnpm-workspace.yaml 添加 packages/shared | | |
-| TASK-011~015 | 依次创建 constants/api.ts、storage.ts、http.ts、time.ts、error.ts | | |
-| TASK-016 | AGENTS.md 追加"常量规范"章节 | | |
-| TASK-017 | 更新 frontend-dev / backend-dev / ai-dev agent prompt，增加硬编码检查步骤 | | |
-| TASK-018 | 更新 reviewer prompt 审查清单，细化硬编码检查项 | | |
+| Task         | Description                                                               | Completed | Date |
+| ------------ | ------------------------------------------------------------------------- | --------- | ---- |
+| TASK-009     | 创建 packages/shared/package.json、tsconfig.json、src/index.ts            |           |      |
+| TASK-010     | 更新 pnpm-workspace.yaml 添加 packages/shared                             |           |      |
+| TASK-011~015 | 依次创建 constants/api.ts、storage.ts、http.ts、time.ts、error.ts         |           |      |
+| TASK-016     | AGENTS.md 追加"常量规范"章节                                              |           |      |
+| TASK-017     | 更新 frontend-dev / backend-dev / ai-dev agent prompt，增加硬编码检查步骤 |           |      |
+| TASK-018     | 更新 reviewer prompt 审查清单，细化硬编码检查项                           |           |      |
 
 ### Phase 3 — 代码迁移 + 语义化规范
 
 - GOAL-003: 迁移现有硬编码到 packages/shared；沉淀命名语义化规范
 
-| Task | Description | Completed | Date |
-|------|-------------|-----------|------|
-| TASK-019 | 重构 client/src/api/client.ts → 常量引用 | | |
-| TASK-020 | 重构 client/src/stores/auth.ts → 常量引用 | | |
-| TASK-021 | 重构 server/src/main.ts → 常量引用 | | |
-| TASK-022 | AGENTS.md 追加"命名规范"章节 | | |
-| TASK-023 | 更新 .vscode/settings.json（ESLint/Prettier 编辑器集成） | | |
-| TASK-024 | 最终验证：pnpm lint + pnpm typecheck 无报错 | | |
+| Task     | Description                                              | Completed | Date |
+| -------- | -------------------------------------------------------- | --------- | ---- |
+| TASK-019 | 重构 client/src/api/client.ts → 常量引用                 |           |      |
+| TASK-020 | 重构 client/src/stores/auth.ts → 常量引用                |           |      |
+| TASK-021 | 重构 server/src/main.ts → 常量引用                       |           |      |
+| TASK-022 | AGENTS.md 追加"命名规范"章节                             |           |      |
+| TASK-023 | 更新 .vscode/settings.json（ESLint/Prettier 编辑器集成） |           |      |
+| TASK-024 | 最终验证：pnpm lint + pnpm typecheck 无报错              |           |      |
 
 ## 3. Alternatives
 
@@ -83,24 +83,24 @@ tags: infrastructure, coding-standards, eslint, constants, naming-conventions
 
 ## 5. Files
 
-| File | Description |
-|------|-------------|
-| FILE-001 | `eslint.config.mjs` | 根目录 ESLint flat config |
-| FILE-002 | `.prettierrc.json` | Prettier 配置 |
-| FILE-003 | `package.json` | 追加 scripts + hooks + lint-staged |
-| FILE-004 | `packages/shared/package.json` | 共享常量包 |
-| FILE-005 | `packages/shared/tsconfig.json` | 常量包 TS 配置 |
-| FILE-006 | `packages/shared/src/index.ts` | 入口 |
-| FILE-007~011 | `packages/shared/src/constants/*.ts` | 各分类常量 |
-| FILE-012 | `pnpm-workspace.yaml` | 添加 packages/shared |
-| FILE-013 | `client/src/api/client.ts` | 重构 |
-| FILE-014 | `client/src/stores/auth.ts` | 重构 |
-| FILE-015 | `server/src/main.ts` | 重构 |
-| FILE-016 | `AGENTS.md` | 追加规范 |
-| FILE-017~019 | `.opencode/prompts/{frontend-dev,backend-dev,ai-dev}.txt` | 更新 |
-| FILE-020 | `.opencode/prompts/reviewer.txt` | 更新 |
-| FILE-021 | `.vscode/settings.json` | 更新 |
-| FILE-022 | `.gitignore` | 补充 |
+| File         | Description                                               |
+| ------------ | --------------------------------------------------------- |
+| FILE-001     | `eslint.config.mjs`                                       | 根目录 ESLint flat config          |
+| FILE-002     | `.prettierrc.json`                                        | Prettier 配置                      |
+| FILE-003     | `package.json`                                            | 追加 scripts + hooks + lint-staged |
+| FILE-004     | `packages/shared/package.json`                            | 共享常量包                         |
+| FILE-005     | `packages/shared/tsconfig.json`                           | 常量包 TS 配置                     |
+| FILE-006     | `packages/shared/src/index.ts`                            | 入口                               |
+| FILE-007~011 | `packages/shared/src/constants/*.ts`                      | 各分类常量                         |
+| FILE-012     | `pnpm-workspace.yaml`                                     | 添加 packages/shared               |
+| FILE-013     | `client/src/api/client.ts`                                | 重构                               |
+| FILE-014     | `client/src/stores/auth.ts`                               | 重构                               |
+| FILE-015     | `server/src/main.ts`                                      | 重构                               |
+| FILE-016     | `AGENTS.md`                                               | 追加规范                           |
+| FILE-017~019 | `.opencode/prompts/{frontend-dev,backend-dev,ai-dev}.txt` | 更新                               |
+| FILE-020     | `.opencode/prompts/reviewer.txt`                          | 更新                               |
+| FILE-021     | `.vscode/settings.json`                                   | 更新                               |
+| FILE-022     | `.gitignore`                                              | 补充                               |
 
 ## 6. Testing
 

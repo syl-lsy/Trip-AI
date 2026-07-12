@@ -8,7 +8,8 @@
     "format": "prettier --write '**/*.{ts,vue,js,mjs,json,css,md}'",
     "typecheck": "pnpm -r typecheck",
     "build": "pnpm -r build",
-    "postinstall": "simple-git-hooks"
+    "postinstall": "simple-git-hooks",
+    "sync": "zsh scripts/git-sync.sh"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged"
@@ -28,6 +29,7 @@
     "concurrently": "^9.1.2",
     "eslint": "^10.7.0",
     "eslint-plugin-prettier": "^5.5.6",
+    "eslint-plugin-vue": "^10.9.2",
     "lint-staged": "^17.0.8",
     "prettier": "^3.9.5",
     "simple-git-hooks": "^2.13.1",

@@ -27,7 +27,8 @@
 2. 遵循现有模式实现代码
 3. 编写全面的测试（单元测试 + 组件测试 + 集成测试）
 4. 验证所有测试通过
-5. 检查：路由是否懒加载（defineAsyncComponent）、图片是否懒加载（loading="lazy"）、无包体积膨胀
+ 5. 检查：路由是否懒加载（defineAsyncComponent）、图片是否懒加载（loading="lazy"）、无包体积膨胀
+ 6. 硬编码检查：所有 URL/状态码/Storage Key/错误信息必须从 `@trip/shared` 常量包引用，禁止直接写字面量
 
 测试标准：
 - 使用 Vitest 做单元/组件测试，Playwright 做 E2E 测试

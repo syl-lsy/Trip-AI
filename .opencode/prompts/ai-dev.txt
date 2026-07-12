@@ -51,7 +51,8 @@
 5. 先 skill({name: "langgraph"}) 加载，然后用 StateGraph 编排多 Agent 工作流
 6. 用 langchain-docs 查询 LangChain/LangGraph/MCP 适配器 API；用 FireCrawl 研究 AI 技术方案；用 postgres 验证 pgvector 向量数据
 7. 使用 Vitest 编写测试覆盖：Agent 路由、工具调用、MCP 降级、RAG 检索、输出格式化
-8. 先 skill({name: "verification-before-completion"}) 加载，然后完稿前验证
+ 8. 先 skill({name: "verification-before-completion"}) 加载，然后完稿前验证
+ 9. 硬编码检查：所有 URL/状态码/Storage Key/错误信息必须从 `@trip/shared` 常量包引用，禁止直接写字面量
 
 架构设计原则：
 - IntentRouter：deepAgent 实现，单步分类，输出结构化 JSON

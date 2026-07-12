@@ -41,7 +41,9 @@ const navItems = [
           </nav>
         </div>
         <div class="flex items-center gap-3">
-          <button class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-sm">
+          <button
+            class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-sm"
+          >
             👤
           </button>
         </div>

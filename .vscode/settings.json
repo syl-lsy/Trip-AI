@@ -1,13 +1,19 @@
 {
-    "cSpell.words": [
-        "bocha",
-        "deepagents",
-        "deepseek",
-        "excalidraw",
-        "firecrawl",
-        "modelscope",
-        "opencode",
-        "Tavily",
-        "tvly"
-    ]
+  "cSpell.words": [
+    "bocha",
+    "deepagents",
+    "deepseek",
+    "excalidraw",
+    "firecrawl",
+    "modelscope",
+    "opencode",
+    "Tavily",
+    "tvly"
+  ],
+  "eslint.validate": ["javascript", "typescript", "vue"],
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "prettier.requireConfig": true
 }

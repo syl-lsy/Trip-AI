@@ -1,19 +1,20 @@
 import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
+import { API_PREFIX, CORS, PORT } from '@trip/shared'
 import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
 
-  app.setGlobalPrefix('api')
+  app.setGlobalPrefix(API_PREFIX.replace('/', ''))
   app.enableCors({
-    origin: ['http://localhost:5173'],
+    origin: CORS.ORIGIN,
     credentials: true,
   })
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
   app.useGlobalFilters(new HttpExceptionFilter())
 
-  await app.listen(3000)
+  await app.listen(PORT)
 }
 bootstrap()
