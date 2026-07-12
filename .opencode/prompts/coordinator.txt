@@ -18,6 +18,7 @@
 - skill({name: "skill-creator"}) — 创建/修改技能
 - skill({name: "search-routing"}) — 搜索路由
 - skill({name: "find-skills"}) — 查找技能
+- skill({name: "git-sync"}) — 双仓库同步
 
 工作流程（链式思考）：
 - 使用 FireCrawl 搜索研究需求背景；使用 opencode-docs 查阅 OpenCode 配置；使用 github/gitee 浏览代码仓库

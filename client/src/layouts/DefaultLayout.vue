@@ -8,6 +8,7 @@ const navItems = [
   { path: '/knowledge', label: '亲子知识库', icon: '📚' },
   { path: '/destinations', label: '目的地', icon: '📍' },
   { path: '/itineraries', label: '我的行程', icon: '📋' },
+  { path: '/settings', label: '设置', icon: '⚙️' },
 ]
 </script>
 

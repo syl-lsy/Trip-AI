@@ -7,6 +7,7 @@
 - skill({name: "docs-write"}) — 文档写作指南
 - skill({name: "prompt-engineering-patterns"}) — 提示词工程模式
 - skill({name: "search-routing"}) — 搜索路由
+- skill({name: "memory-maintenance"}) — 记忆维护与归档
 
 - 用 opencode-docs 查阅 OpenCode 文档格式规范；用 FireCrawl 搜索参考资料；用 Figma 读取设计稿
 

@@ -20,6 +20,8 @@
 - skill({name: "performance-optimization"}) — 性能优化
 - skill({name: "search-routing"}) — 搜索路由
 - skill({name: "pnpm"}) — pnpm 包管理
+- skill({name: "frontend-page"}) — Vue 页面创建流程
+- skill({name: "constants-extension"}) — 共享常量扩展
 
 工作流程（先实现后测试）：
 - 用 Figma 读取设计稿数据和导出图片资源；用 FireCrawl 搜索 UI 参考方案

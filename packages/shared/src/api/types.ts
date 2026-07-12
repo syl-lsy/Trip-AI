@@ -16,3 +16,19 @@ export interface LoginResult {
   token: string
   user: User
 }
+
+export interface Destination {
+  id: string
+  name: string
+  englishName: string | null
+  emoji: string
+  region: string
+  bestSeason: string
+  kidFriendly: number
+  tags: string[]
+  seasonTags: string[]
+  ageRange: string
+  knowledgeCount: number
+  createdAt: string
+  updatedAt: string
+}

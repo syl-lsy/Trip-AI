@@ -71,6 +71,8 @@ Last updated: 2026-07-09
 
 ## Auto Memory（AI 自动记录）
 
+- 2026-07-12 | config | 6个未引入流程的技能已集成到Agent prompts：memory-maintenance→docs-writer，backend-module/prisma-operations/constants-extension→backend-dev，frontend-page/constants-extension→frontend-dev，git-sync→coordinator
+
 - 2026-07-12 | decision | 用户头像上传功能已完成：采用 multipart/form-data 上传到 /api/user/avatar 端点，文件存储到 server/uploads/avatars/ 目录，数据库只存相对路径，前端使用 Pinia store 管理上传状态
 
 - 2026-07-12 | config | dev-cycle skill description 优化：3 轮迭代后从中文改为英文描述，核心信号改为 business-logic code changes → activate，提高触发精度

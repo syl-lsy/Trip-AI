@@ -6,6 +6,7 @@ export const ROUTES = {
   KNOWLEDGE: '/knowledge',
   DESTINATIONS: '/destinations',
   ITINERARIES: '/itineraries',
+  SETTINGS: '/settings',
   AUTH: {
     SEND_CODE: '/auth/send-code',
     LOGIN: '/auth/login',

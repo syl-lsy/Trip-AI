@@ -9,13 +9,13 @@ layer: fullstack
 
 记忆系统分 5 个 Phase 持续推进，从基础架构到 GC/搜索优化到双保险机制：
 
-| Phase | 主题 | 核心变更 |
-|-------|------|---------|
-| Phase 1 | 基础架构 | BM25 检索、硬截断、Compaction 保留、后台提取 |
-| Phase 2 | 日志与 GC 修复 | GC mtime 修复、Heartbeat 去重、对话日志归档 |
-| Phase 3 | 搜索升级 | BM25 段落级分块、context-mode 桥接 |
-| Phase 4 | 跨会话整合 | 跨会话知识整合、MEMORY.md 同步、检索链指令强化 |
-| Phase 5 | Archives 双保险 | 定时 job 主力 GC + Plugin 安全网 |
+| Phase   | 主题            | 核心变更                                       |
+| ------- | --------------- | ---------------------------------------------- |
+| Phase 1 | 基础架构        | BM25 检索、硬截断、Compaction 保留、后台提取   |
+| Phase 2 | 日志与 GC 修复  | GC mtime 修复、Heartbeat 去重、对话日志归档    |
+| Phase 3 | 搜索升级        | BM25 段落级分块、context-mode 桥接             |
+| Phase 4 | 跨会话整合      | 跨会话知识整合、MEMORY.md 同步、检索链指令强化 |
+| Phase 5 | Archives 双保险 | 定时 job 主力 GC + Plugin 安全网               |
 
 ## 架构总览
 
@@ -37,38 +37,37 @@ layer: fullstack
 │ - 硬截断           │   │ memory.ts       │   │ MEMORY.md       │
 │ - compaction      │   │ archive-        │   │ ACTIVE-CONTEXT  │
 │ - 心跳同步         │   │ conversations   │   │ daily/ topics/  │
-│ - 跨会话整合       │   │ build-rules.ts  │   │ conversations/  │
+│ - 跨会话整合       │   │ conversations/  │   │ conversations/  │
 └─────────────────┘   └─────────────────┘   └─────────────────┘
 ```
 
 ### Plugin 运行时层（`.opencode/plugins/auto-memory.ts`）
 
-| 组件 | 说明 | Phase |
-|------|------|-------|
-| **memory_search** | BM25 评分排序 + frontmatter 元数据，支持 precise/semantic 模式 | 1 |
-| **memory_write** | 写入 MEMORY.md（自动去重 + 硬截断）+ 同步 daily note | 1 |
-| **session_update** | 更新当前会话摘要（task / files / decision / next） | 1 |
-| **spillover_list / spillover_read** | 列出/读取大工具输出的溢出备份 | 1 |
-| **experimental.session.compacting** | 注入 MEMORY.md + ACTIVE-CONTEXT.md + 会话摘要 + 今日决策 | 1 |
-| **tool.execute.after** | 记录文件修改 + 测试命令 + 大输出溢出备份 | 1 |
-| **event: session.created** | 创建会话摘要文件 | 1 |
-| **gcOldFiles (mtime 修复)** | 改用 `fs.promises.stat` 真实 mtime | 2 |
-| **Heartbeat 去重** | 同日多条 auto_flush 合并为一条 | 2 |
-| **extractParagraphs** | 段落级 BM25 分块替代逐行评分 | 3 |
-| **queryContextMode** | memory_search 桥接 context-mode 查询 | 3 |
-| **consolidateCrossSession** | 跨会话知识整合（最近 3 session 对比） | 4 |
-| **syncMemoryFromDaily** | MEMORY.md 自动从 daily 同步决策 | 4 |
-| **event: session.idle** | 心跳同步 + 会话摘要写入 daily + GC（溢出/会话/archives） | 1+5 |
-| **archiveDir + ARCHIVE_TTL** | archives 90 天 TTL 安全网 GC | 5 |
+| 组件                                | 说明                                                           | Phase |
+| ----------------------------------- | -------------------------------------------------------------- | ----- |
+| **memory_search**                   | BM25 评分排序 + frontmatter 元数据，支持 precise/semantic 模式 | 1     |
+| **memory_write**                    | 写入 MEMORY.md（自动去重 + 硬截断）+ 同步 daily note           | 1     |
+| **session_update**                  | 更新当前会话摘要（task / files / decision / next）             | 1     |
+| **spillover_list / spillover_read** | 列出/读取大工具输出的溢出备份                                  | 1     |
+| **experimental.session.compacting** | 注入 MEMORY.md + ACTIVE-CONTEXT.md + 会话摘要 + 今日决策       | 1     |
+| **tool.execute.after**              | 记录文件修改 + 测试命令 + 大输出溢出备份                       | 1     |
+| **event: session.created**          | 创建会话摘要文件                                               | 1     |
+| **gcOldFiles (mtime 修复)**         | 改用 `fs.promises.stat` 真实 mtime                             | 2     |
+| **Heartbeat 去重**                  | 同日多条 auto_flush 合并为一条                                 | 2     |
+| **extractParagraphs**               | 段落级 BM25 分块替代逐行评分                                   | 3     |
+| **queryContextMode**                | memory_search 桥接 context-mode 查询                           | 3     |
+| **consolidateCrossSession**         | 跨会话知识整合（最近 3 session 对比）                          | 4     |
+| **syncMemoryFromDaily**             | MEMORY.md 自动从 daily 同步决策                                | 4     |
+| **event: session.idle**             | 心跳同步 + 会话摘要写入 daily + GC（溢出/会话/archives）       | 1+5   |
+| **archiveDir + ARCHIVE_TTL**        | archives 90 天 TTL 安全网 GC                                   | 5     |
 
 ### Script 工具层
 
-| 脚本 | 功能 |
-|------|------|
-| `scripts/extract-memories.ts` | 扫描 daily notes / 对话日志，规则或 LLM 提取新记忆 |
-| `scripts/compact-memory.ts` | 聚类去重合并，`--auto` 模式自动收集 daily notes |
-| `scripts/archive-conversations.sh` | 对话日志归档（保留 5 条）+ GC（>100 文件清理） |
-| `scripts/build-rules.ts` | 文件系统行走 + @-import 展开 + 规则合并 |
+| 脚本                               | 功能                                               |
+| ---------------------------------- | -------------------------------------------------- |
+| `scripts/extract-memories.ts`      | 扫描 daily notes / 对话日志，规则或 LLM 提取新记忆 |
+| `scripts/compact-memory.ts`        | 聚类去重合并，`--auto` 模式自动收集 daily notes    |
+| `scripts/archive-conversations.sh` | 对话日志归档（保留 5 条）+ GC（>100 文件清理）     |
 
 ### 文件层次
 
@@ -124,11 +123,11 @@ docs/memory/
 
 ### 变更文件
 
-| 文件 | 操作 | 说明 |
-|------|------|------|
+| 文件                               | 操作 | 说明                              |
+| ---------------------------------- | ---- | --------------------------------- |
 | `.opencode/plugins/auto-memory.ts` | 修改 | GC mtime 修复、心跳去重、日志归档 |
-| `docs/memory/conversations/` | 归档 | 76 个文件移入 `archives/2026-07/` |
-| `docs/memory/MANAGEMENT.md` | 更新 | 目录结构说明与实现对齐 |
+| `docs/memory/conversations/`       | 归档 | 76 个文件移入 `archives/2026-07/` |
+| `docs/memory/MANAGEMENT.md`        | 更新 | 目录结构说明与实现对齐            |
 
 ### 关键决策
 
@@ -146,8 +145,8 @@ docs/memory/
 
 ### 变更文件
 
-| 文件 | 操作 | 说明 |
-|------|------|------|
+| 文件                               | 操作 | 说明                               |
+| ---------------------------------- | ---- | ---------------------------------- |
 | `.opencode/plugins/auto-memory.ts` | 修改 | BM25 段落级分块、context-mode 桥接 |
 
 ### 关键决策
@@ -164,10 +163,10 @@ docs/memory/
 
 ### 变更文件
 
-| 文件 | 操作 | 说明 |
-|------|------|------|
+| 文件                               | 操作 | 说明                    |
+| ---------------------------------- | ---- | ----------------------- |
 | `.opencode/plugins/auto-memory.ts` | 修改 | 跨会话整合、MEMORY 同步 |
-| `.opencode/opencode.json` | 修改 | 追加检索链指令 |
+| `.opencode/opencode.json`          | 修改 | 追加检索链指令          |
 
 ### 关键决策
 
@@ -185,12 +184,12 @@ docs/memory/
 
 ### 变更文件
 
-| 文件 | 操作 | 说明 |
-|------|------|------|
+| 文件                               | 操作 | 说明                                                             |
+| ---------------------------------- | ---- | ---------------------------------------------------------------- |
 | `.opencode/plugins/auto-memory.ts` | 修改 | 新增 `ARCHIVE_TTL_MS=90天`、`archiveDir()`、session.idle GC 调用 |
-| `.opencode/opencode.json` | 修改 | 新增 `archive-conversations` 定时命令 |
-| `docs/memory/MANAGEMENT.md` | 更新 | 添加双保险说明 |
-| `scripts/archive-conversations.sh` | 已有 | 已有 `gc_archives()` 函数（>100 按文件数清理） |
+| `.opencode/opencode.json`          | 修改 | 新增 `archive-conversations` 定时命令                            |
+| `docs/memory/MANAGEMENT.md`        | 更新 | 添加双保险说明                                                   |
+| `scripts/archive-conversations.sh` | 已有 | 已有 `gc_archives()` 函数（>100 按文件数清理）                   |
 
 ### 架构
 
@@ -217,34 +216,34 @@ docs/memory/
 
 ## 与 Claude Code 的差距
 
-| 维度 | Claude Code | 当前实现 | 差距评估 |
-|------|------------|---------|---------|
-| 记忆检索 | Sonnet side-query 语义选择 | BM25 + agent LLM 判断 | **接近** |
-| 硬截断 | 原生 `truncateEntrypointContent` | Plugin 运行时截断 | **对等** |
-| Compaction | 8 种机制（微压缩 → collapse） | 基础 compaction 保留 | **大差距** |
-| 后台提取 | fork subagent + Opus 侧查询 | Script 双模式（规则/LLM） | **中等** |
-| Auto Dream | 空闲时 4 阶段 consolidation | `compact-memory.ts --auto` | **中等** |
-| Session Memory | 结构化 session summary | ACTIVE-CONTEXT 手动维护 | **中等** |
-| 日志 GC | 内置 | 双保险（脚本+Plugin） | **对等** |
+| 维度           | Claude Code                      | 当前实现                   | 差距评估   |
+| -------------- | -------------------------------- | -------------------------- | ---------- |
+| 记忆检索       | Sonnet side-query 语义选择       | BM25 + agent LLM 判断      | **接近**   |
+| 硬截断         | 原生 `truncateEntrypointContent` | Plugin 运行时截断          | **对等**   |
+| Compaction     | 8 种机制（微压缩 → collapse）    | 基础 compaction 保留       | **大差距** |
+| 后台提取       | fork subagent + Opus 侧查询      | Script 双模式（规则/LLM）  | **中等**   |
+| Auto Dream     | 空闲时 4 阶段 consolidation      | `compact-memory.ts --auto` | **中等**   |
+| Session Memory | 结构化 session summary           | ACTIVE-CONTEXT 手动维护    | **中等**   |
+| 日志 GC        | 内置                             | 双保险（脚本+Plugin）      | **对等**   |
 
 ---
 
 ## 测试结果
 
-| 测试项 | 预期 | 结果 |
-|--------|------|------|
-| TypeScript 编译 | 零错误 | ✅ |
-| GC mtime 修复 | 按真实 mtime 排序清理 | ✅ |
-| Heartbeat 去重 | 同日仅一条记录 | ✅ |
-| 对话日志归档 | `archives/YYYY-MM/` 独立文件 + INDEX.md | ✅ |
-| BM25 段落匹配 | 段落级评分，跨行匹配 | ✅ |
-| context-mode 桥接 | 合并查询结果 | ✅ |
-| 跨会话整合 | 高频主题提取（>=3 session） | ✅ |
-| MEMORY.md 同步 | daily → MEMORY.md 自动追加 | ✅ |
-| Plugin 90 天 GC | 删除 mtime > 90 天的文件 | ✅ |
-| Plugin 排除 INDEX.md | INDEX.md 不被删除 | ✅ |
-| 定时 job 文件数 GC | >100 文件时清理至 ≤ 100 | ✅ |
-| 定时 job prompt 模式 | 每小时自动触发 | ✅ |
+| 测试项               | 预期                                    | 结果 |
+| -------------------- | --------------------------------------- | ---- |
+| TypeScript 编译      | 零错误                                  | ✅   |
+| GC mtime 修复        | 按真实 mtime 排序清理                   | ✅   |
+| Heartbeat 去重       | 同日仅一条记录                          | ✅   |
+| 对话日志归档         | `archives/YYYY-MM/` 独立文件 + INDEX.md | ✅   |
+| BM25 段落匹配        | 段落级评分，跨行匹配                    | ✅   |
+| context-mode 桥接    | 合并查询结果                            | ✅   |
+| 跨会话整合           | 高频主题提取（>=3 session）             | ✅   |
+| MEMORY.md 同步       | daily → MEMORY.md 自动追加              | ✅   |
+| Plugin 90 天 GC      | 删除 mtime > 90 天的文件                | ✅   |
+| Plugin 排除 INDEX.md | INDEX.md 不被删除                       | ✅   |
+| 定时 job 文件数 GC   | >100 文件时清理至 ≤ 100                 | ✅   |
+| 定时 job prompt 模式 | 每小时自动触发                          | ✅   |
 
 ---
 

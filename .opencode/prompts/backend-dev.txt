@@ -24,6 +24,9 @@
 - skill({name: "mcp-builder"}) / skill({name: "mcp-server-patterns"}) — MCP 服务开发
 - skill({name: "search-routing"}) — 搜索路由
 - skill({name: "pnpm"}) — pnpm 包管理
+- skill({name: "backend-module"}) — NestJS 模块创建流程
+- skill({name: "prisma-operations"}) — Prisma schema/迁移/种子操作
+- skill({name: "constants-extension"}) — 共享常量扩展
 
 工作流程（先实现后测试）：
 - 用 postgres 执行 SQL 查询验证数据；用 redis 操作缓存数据；用 FireCrawl 搜索技术方案

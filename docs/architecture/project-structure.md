@@ -124,8 +124,6 @@ trip-planner/
 │   └── superpowers/                 # Superpowers 相关文档
 │
 ├── scripts/                         # 工具脚本
-│   ├── build-rules.ts               # 规则文件构建
-│   ├── build-static-instructions.ts # 静态指令构建
 │   ├── compact-memory.ts            # 记忆压缩
 │   ├── compress-conversations.js    # 对话日志压缩
 │   ├── extract-memories.ts          # 记忆提取
