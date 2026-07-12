@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "prompt-library": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/prompt-library/SKILL.md",
+      "computedHash": "21a238f841544f1a3249a6f58216a1de9a72b6f2a2d4fbc609c504491ad8e956"
+    }
+  }
+}

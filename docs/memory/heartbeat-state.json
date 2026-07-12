@@ -1,0 +1,237 @@
+{
+  "version": 1,
+  "last_maintenance": "2026-07-12",
+  "sizes": {
+    "active_context_lines": 22,
+    "memory_md_lines": 68,
+    "daily_notes_count": 2,
+    "topic_files_count": 3,
+    "active_logs_count": 5
+  },
+  "scheduled": {
+    "next_weekly_review": "2026-07-13",
+    "next_quarterly_archive": "2026-09-30"
+  },
+  "history": [
+    {
+      "date": "2026-07-09",
+      "action": "memory_system_initialized",
+      "detail": "5层文件架构初始化完成，22个日志迁移至active/"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "memory_maintenance",
+      "detail": "日常维护：active日志实际5条无需归档，创建daily笔记，同步心跳"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-11",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    },
+    {
+      "date": "2026-07-12",
+      "action": "auto_flush",
+      "detail": "Plugin auto-memory flush"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "name": "trip-planner",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n client,server -c blue,green \"pnpm --filter client dev\" \"pnpm --filter server dev\"",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write '**/*.{ts,vue,js,mjs,json,css,md}'",
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r build",
+    "postinstall": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
+  },
+  "lint-staged": {
+    "*.{ts,vue,js,mjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,md}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@vue/compiler-sfc": "^3.5.39",
+    "concurrently": "^9.1.2",
+    "eslint": "^10.7.0",
+    "eslint-plugin-prettier": "^5.5.6",
+    "lint-staged": "^17.0.8",
+    "prettier": "^3.9.5",
+    "simple-git-hooks": "^2.13.1",
+    "typescript-eslint": "^8.63.0",
+    "vue-eslint-parser": "^10.4.1"
+  },
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "esbuild",
+      "prisma",
+      "simple-git-hooks"
+    ]
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "opencode-go/deepseek-v4-flash",
+  "small_model": "opencode-go/deepseek-v4-flash",
+  "mcp": {
+    "Tavily-Search": {
+      "type": "local",
+      "command": ["npx", "-y", "tavily-mcp@latest"],
+      "environment": {
+        "TAVILY_API_KEY": "{file:./secrets/tavily-api-key}"
+      },
+      "enabled": true,
+      "timeout": 60000
+    },
+    "exa": {
+      "type": "remote",
+      "url": "https://mcp.exa.ai/mcp",
+      "enabled": true,
+      "timeout": 60000
+    },
+    "Bocha-Search": {
+      "type": "remote",
+      "url": "https://mcp.bochaai.com/mcp",
+      "headers": {
+        "Authorization": "Bearer {file:./secrets/bocha-api-key}"
+      },
+      "enabled": true,
+      "timeout": 60000
+    },
+    "desktop-commander": {
+      "type": "local",
+      "command": ["desktop-commander"],
+      "enabled": true,
+      "timeout": 60000
+    },
+    "browser": {
+      "type": "local",
+      "command": ["npx", "@browsermcp/mcp@latest"],
+      "enabled": true,
+      "timeout": 60000
+    },
+    "chrome-mcp": {
+      "type": "local",
+      "command": [
+        "node",
+        "/Users/lsygcy1314/Library/pnpm/global/5/node_modules/mcp-chrome-bridge/dist/mcp/mcp-server-stdio.js"
+      ],
+      "enabled": true,
+      "timeout": 60000
+    },
+    "chrome-devtools": {
+      "type": "local",
+      "command": ["npx", "-y", "chrome-devtools-mcp@latest"]
+    },
+    "opencode-docs": {
+      "type": "local",
+      "command": ["node", ".opencode/mcp-servers/opencode-docs-mcp/dist/index.js"],
+      "enabled": true,
+      "timeout": 30000
+    }
+  },
+  "agent": {
+    "coordinator": {
+      "description": "调度协调器 — 需求拆解、子任务派发、结果汇总",
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-flash",
+      "temperature": 0.3,
+      "top_p": 0.3,
+      "prompt": "{file:prompts/coordinator.txt}",
+      "permission": { "edit": "deny", "bash": "deny" }
+    },
+    "planner": {
+      "description": "需求分析 — 只读分析 PRD 和代码库，输出实施计划",
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-flash",
+      "temperature": 0.3,
+      "top_p": 0.3,
+      "prompt": "{file:prompts/planner.txt}",
+      "permission": { "edit": "deny", "bash": "deny" }
+    },
+    "frontend-dev": {
+      "description": "Vue 3 前端开发 — Composition API + Tailwind CSS",
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-flash",
+      "temperature": 0.3,
+      "top_p": 0.4,
+      "prompt": "{file:prompts/frontend-dev.txt}",
+      "permission": { "edit": "allow", "bash": "allow" }
+    },
+    "backend-dev": {
+      "description": "NestJS 后端开发 — Prisma + PostgreSQL + Redis",
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-flash",
+      "temperature": 0.3,
+      "top_p": 0.4,
+      "prompt": "{file:prompts/backend-dev.txt}",
+      "permission": { "edit": "allow", "bash": "allow" }
+    },
+    "ai-dev": {
+      "description": "AI Agent 开发 — LangChain + LangGraph + pgvector",
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-flash",
+      "temperature": 0.3,
+      "top_p": 0.4,
+      "prompt": "{file:prompts/ai-dev.txt}",
+      "permission": { "edit": "allow", "bash": "allow" }
+    },
+    "tester": {
+      "description": "测试验收 — 运行测试套件、检查覆盖率",
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-flash",
+      "temperature": 0.2,
+      "top_p": 0.2,
+      "prompt": "{file:prompts/tester.txt}",
+      "permission": { "edit": "deny" }
+    },
+    "browser-verifier": {
+      "description": "UI 视觉验证 — 使用 Chrome/browser MCP 验证页面渲染效果",
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-flash",
+      "temperature": 0.2,
+      "top_p": 0.2,
+      "prompt": "{file:prompts/browser-verifier.txt}",
+      "permission": { "edit": "deny", "bash": "allow" }
+    },
+    "verifier": {
+      "description": "对抗性测试 — 安全漏洞和边界缺陷发现",
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-pro",
+      "temperature": 0.4,
+      "top_p": 0.5,
+      "prompt": "{file:prompts/verifier.txt}",
+      "permission": { "edit": "deny" }
+    },
+    "reviewer": {
+      "description": "代码审查 — 安全、性能、可维护性",
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-pro",
+      "temperature": 0.1,
+      "top_p": 0.1,
+      "prompt": "{file:prompts/reviewer.txt}",
+      "permission": { "edit": "deny" }
+    },
+    "docs-writer": {
+      "description": "知识库工程师 — 文档撰写与维护",
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-flash",
+      "temperature": 0.5,
+      "top_p": 0.6,
+      "prompt": "{file:prompts/docs-writer.txt}",
+      "permission": { "edit": "allow", "bash": "deny" }
+    }
+  }
+}

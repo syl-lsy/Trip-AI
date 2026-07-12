@@ -1,0 +1,1269 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "童行AI（Trip with Kids）API",
+    "version": "1.0.0",
+    "description": "童行AI 是一个 AI 驱动的亲子旅游一站式规划平台。\n\n## 认证方式\n\n所有 API（除 auth 外）需要在请求头中携带 JWT Token：\n```\nAuthorization: Bearer <token>\n```\n\n## 标准响应格式\n\n```json\n{\n  \"success\": true,\n  \"data\": { ... },\n  \"error\": null\n}\n```\n\n## 错误响应\n\n```json\n{\n  \"success\": false,\n  \"data\": null,\n  \"error\": \"错误描述信息\"\n}\n```\n\n## AI 流式接口\n\nAI 相关接口使用 Server-Sent Events (SSE) 协议：\n- Content-Type: `text/event-stream`\n- 每条消息格式：`data: {JSON 数据}\\n\\n`\n- 结束标志：`data: [DONE]\\n\\n`",
+    "contact": {
+      "name": "童行AI 团队"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "本地开发环境"
+    }
+  ],
+  "tags": [
+    { "name": "Auth", "description": "认证与用户管理" },
+    { "name": "行程", "description": "行程 CRUD" },
+    { "name": "知识库", "description": "亲子知识库" },
+    { "name": "目的地", "description": "目的地探索" },
+    { "name": "AI", "description": "AI Agent 对话与规划" }
+  ],
+  "paths": {
+    "/api/auth/send-code": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "发送验证码",
+        "description": "向指定手机号发送登录验证码（60 秒有效）",
+        "operationId": "sendVerificationCode",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["phone"],
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "description": "手机号",
+                    "example": "13800138000"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "发送成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "expiresIn": { "type": "integer", "example": 60 }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "手机号格式错误",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "登录/注册",
+        "description": "手机号+验证码登录，新用户自动注册",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["phone", "code"],
+                "properties": {
+                  "phone": {
+                    "type": "string",
+                    "description": "手机号",
+                    "example": "13800138000"
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "验证码（Demo 固定值 123456）",
+                    "example": "123456"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "登录成功，返回 JWT Token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "token": { "type": "string", "description": "JWT Token" },
+                            "user": { "$ref": "#/components/schemas/User" }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "验证码错误",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/profile": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "获取当前用户信息",
+        "description": "获取已登录用户的个人信息",
+        "operationId": "getProfile",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "用户信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/User" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未登录或 Token 无效",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/itineraries": {
+      "get": {
+        "tags": ["行程"],
+        "summary": "获取行程列表",
+        "description": "获取当前用户的行程列表，支持状态筛选和分页",
+        "operationId": "getItineraries",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "筛选状态：draft(草稿)/active(进行中)/completed(已完成)/favorite(收藏)",
+            "schema": {
+              "type": "string",
+              "enum": ["draft", "active", "completed", "favorite"],
+              "example": "active"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码（从 1 开始）",
+            "schema": { "type": "integer", "default": 1, "example": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "每页条数",
+            "schema": { "type": "integer", "default": 20, "example": 20 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "行程列表（分页）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/PaginatedItineraries" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["行程"],
+        "summary": "新建行程",
+        "description": "手动创建空白行程（通常由 AI 规划后自动保存）",
+        "operationId": "createItinerary",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateItineraryDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/Itinerary" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/itineraries/{id}": {
+      "get": {
+        "tags": ["行程"],
+        "summary": "获取行程详情",
+        "description": "获取单条行程的完整信息，包含行程 JSON 数据",
+        "operationId": "getItinerary",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "行程 ID",
+            "example": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "行程详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/Itinerary" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "行程不存在",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["行程"],
+        "summary": "更新行程",
+        "description": "更新行程基本信息或完整行程 JSON（AI 修改后保存）",
+        "operationId": "updateItinerary",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "行程 ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateItineraryDto" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/Itinerary" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["行程"],
+        "summary": "删除行程",
+        "operationId": "deleteItinerary",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/itineraries/{id}/status": {
+      "patch": {
+        "tags": ["行程"],
+        "summary": "更新行程状态",
+        "description": "更新行程状态：draft → active → completed，或切换 favorite",
+        "operationId": "updateItineraryStatus",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["draft", "active", "completed", "favorite"],
+                    "description": "目标状态",
+                    "example": "favorite"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "状态更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/Itinerary" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/knowledge": {
+      "get": {
+        "tags": ["知识库"],
+        "summary": "获取知识列表",
+        "description": "按分类/年龄段筛选知识条目，支持分页",
+        "operationId": "getKnowledgeList",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "description": "分类 slug（如 sanya, traffic, hotel 等）",
+            "schema": { "type": "string", "example": "traffic" }
+          },
+          {
+            "name": "ageRange",
+            "in": "query",
+            "description": "年龄段：0-3 / 3-6 / 6-12 / all",
+            "schema": {
+              "type": "string",
+              "enum": ["0-3", "3-6", "6-12", "all"],
+              "example": "all"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "知识列表（不含正文 content）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/PaginatedKnowledge" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/knowledge/categories": {
+      "get": {
+        "tags": ["知识库"],
+        "summary": "获取分类树",
+        "description": "获取知识库的完整分类层级结构",
+        "operationId": "getKnowledgeCategories",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "分类树",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "array",
+                          "items": { "$ref": "#/components/schemas/Category" }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/knowledge/search": {
+      "get": {
+        "tags": ["知识库"],
+        "summary": "搜索知识",
+        "description": "关键词搜索知识库，返回匹配的知识条目",
+        "operationId": "searchKnowledge",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "description": "搜索关键词",
+            "schema": { "type": "string", "example": "儿童机票" }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "限定分类",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "搜索结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/PaginatedKnowledge" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/knowledge/{id}": {
+      "get": {
+        "tags": ["知识库"],
+        "summary": "获取知识详情",
+        "description": "获取知识的完整内容（含正文 Markdown），同时增加浏览次数",
+        "operationId": "getKnowledgeDetail",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "知识 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "知识详情（含正文）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/KnowledgeDetail" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "知识不存在",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/destinations": {
+      "get": {
+        "tags": ["目的地"],
+        "summary": "获取目的地列表",
+        "description": "按区域/季节/年龄段筛选目的地",
+        "operationId": "getDestinations",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "region",
+            "in": "query",
+            "description": "区域：south / southwest / east",
+            "schema": {
+              "type": "string",
+              "enum": ["south", "southwest", "east"],
+              "example": "south"
+            }
+          },
+          {
+            "name": "season",
+            "in": "query",
+            "description": "推荐季节：spring / summer / autumn / winter",
+            "schema": {
+              "type": "string",
+              "enum": ["spring", "summer", "autumn", "winter"]
+            }
+          },
+          {
+            "name": "ageRange",
+            "in": "query",
+            "description": "年龄段",
+            "schema": {
+              "type": "string",
+              "enum": ["0-3", "3-6", "6-12", "all"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "目的地列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/PaginatedDestinations" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/destinations/search": {
+      "get": {
+        "tags": ["目的地"],
+        "summary": "搜索目的地",
+        "description": "按名称或关键词搜索目的地",
+        "operationId": "searchDestinations",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "example": "三亚" }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "搜索结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/PaginatedDestinations" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/destinations/{id}": {
+      "get": {
+        "tags": ["目的地"],
+        "summary": "获取目的地详情",
+        "operationId": "getDestination",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "目的地详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/ApiResponse" },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": { "$ref": "#/components/schemas/Destination" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ai/chat": {
+      "post": {
+        "tags": ["AI"],
+        "summary": "AI 对话（SSE 流式）",
+        "description": "发送消息给 AI Agent，返回流式 SSE 响应\n\n## SSE 事件格式\n\n```\nevent: message\ndata: {\"type\":\"step\",\"content\":\"正在查询航班信息...\",\"step\":1}\n\nevent: message\ndata: {\"type\":\"text\",\"content\":\"已为你查询到以下航班方案...\"}\n\nevent: message\ndata: {\"type\":\"knowledge\",\"id\":\"uuid\",\"title\":\"儿童机票购买指南\",\"relevance\":0.92}\n\nevent: done\ndata: {\"type\":\"complete\",\"summary\":\"回复完成\"}\n```",
+        "operationId": "aiChat",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["message"],
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "description": "用户消息",
+                    "example": "儿童机票怎么买最划算？"
+                  },
+                  "history": {
+                    "type": "array",
+                    "description": "对话历史（可选）",
+                    "items": { "$ref": "#/components/schemas/ChatMessage" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SSE 流式响应",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "SSE 格式的流式输出"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ai/plan": {
+      "post": {
+        "tags": ["AI"],
+        "summary": "AI 生成新行程（SSE 流式）",
+        "description": "根据用户需求，AI 自动规划完整行程方案，逐步骤流式输出\n\n## SSE 事件类型\n\n| type | 说明 |\n|------|------|\n| `step` | 进度步骤（骨架屏更新）|\n| `transport` | 交通方案片段 |\n| `hotel` | 住宿方案片段 |\n| `attraction` | 景点方案片段 |\n| `restaurant` | 餐饮方案片段 |\n| `budget` | 预算汇总 |\n| `knowledge` | 关联知识引用 |\n| `complete` | 完整行程 JSON |",
+        "operationId": "aiPlan",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["destination", "days", "adults", "children"],
+                "properties": {
+                  "destination": {
+                    "type": "string",
+                    "description": "目的地",
+                    "example": "三亚"
+                  },
+                  "days": {
+                    "type": "integer",
+                    "description": "行程天数",
+                    "example": 5
+                  },
+                  "adults": {
+                    "type": "integer",
+                    "description": "成人数",
+                    "example": 2
+                  },
+                  "children": {
+                    "type": "integer",
+                    "description": "儿童数",
+                    "example": 1
+                  },
+                  "childAge": {
+                    "type": "integer",
+                    "description": "儿童年龄（岁）",
+                    "example": 5
+                  },
+                  "budget": {
+                    "type": "number",
+                    "description": "预算上限（元）",
+                    "example": 10000
+                  },
+                  "pace": {
+                    "type": "string",
+                    "enum": ["轻松", "适中", "紧凑"],
+                    "description": "行程节奏",
+                    "example": "轻松"
+                  },
+                  "preferences": {
+                    "type": "array",
+                    "description": "偏好标签",
+                    "items": { "type": "string" },
+                    "example": ["海边", "动物园", "亲子酒店"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SSE 流式响应",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "SSE 格式的流式输出"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ai/modify": {
+      "post": {
+        "tags": ["AI"],
+        "summary": "AI 修改行程（SSE 流式）",
+        "description": "通过自然语言描述修改现有行程",
+        "operationId": "aiModify",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["itineraryId", "instruction"],
+                "properties": {
+                  "itineraryId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "要修改的行程 ID"
+                  },
+                  "instruction": {
+                    "type": "string",
+                    "description": "修改指令（自然语言）",
+                    "example": "把第三天的景点换成适合5岁孩子玩的动物园"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SSE 流式响应，最终返回完整行程 JSON",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "SSE 格式的流式输出"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "登录接口返回的 JWT Token"
+      }
+    },
+    "schemas": {
+      "ApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "请求是否成功"
+          },
+          "data": {
+            "description": "响应数据（成功时存在）",
+            "nullable": true
+          },
+          "error": {
+            "type": "string",
+            "description": "错误描述（失败时存在）",
+            "nullable": true
+          }
+        },
+        "required": ["success"]
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "phone": { "type": "string", "description": "手机号" },
+          "nickname": { "type": "string", "nullable": true, "description": "昵称" },
+          "role": {
+            "type": "string",
+            "enum": ["user", "admin"],
+            "description": "角色：user(亲子家庭)/admin(管理员)"
+          },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Itinerary": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string", "example": "三亚5天4晚亲子游" },
+          "destination": { "type": "string", "example": "海南三亚" },
+          "startDate": { "type": "string", "format": "date", "nullable": true },
+          "endDate": { "type": "string", "format": "date", "nullable": true },
+          "adults": { "type": "integer", "example": 2 },
+          "children": { "type": "integer", "example": 1 },
+          "childAge": { "type": "integer", "nullable": true, "example": 5 },
+          "pace": {
+            "type": "string",
+            "enum": ["轻松", "适中", "紧凑"],
+            "nullable": true
+          },
+          "budget": { "type": "number", "nullable": true, "example": 8650 },
+          "kidFriendly": { "type": "number", "nullable": true, "example": 9.2 },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "active", "completed", "favorite"],
+            "example": "active"
+          },
+          "itineraryJson": {
+            "$ref": "#/components/schemas/ItineraryJson",
+            "nullable": true
+          },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ItineraryJson": {
+        "type": "object",
+        "description": "完整行程 JSON 数据",
+        "properties": {
+          "totalBudget": { "type": "number", "example": 8650 },
+          "kidFriendlyScore": { "type": "number", "example": 9.2 },
+          "days": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DayPlan" }
+          }
+        }
+      },
+      "DayPlan": {
+        "type": "object",
+        "properties": {
+          "day": { "type": "integer", "example": 1 },
+          "title": { "type": "string", "example": "抵达适应日" },
+          "description": { "type": "string", "example": "步行约2km · 适合儿童节奏" },
+          "nodes": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ItineraryNode" }
+          }
+        }
+      },
+      "ItineraryNode": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["transport", "attraction", "dining", "hotel", "rest"],
+            "description": "节点类型：交通/景点/餐饮/住宿/休息"
+          },
+          "emoji": { "type": "string", "example": "🚗" },
+          "startTime": { "type": "string", "example": "08:00" },
+          "endTime": { "type": "string", "example": "08:36" },
+          "title": { "type": "string", "example": "苏州站 → 上海虹桥站 · 高铁 G1234" },
+          "description": { "type": "string", "nullable": true },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": { "type": "string", "example": "儿童免票" },
+                "type": {
+                  "type": "string",
+                  "enum": ["info", "success", "warning", "danger", "knowledge"]
+                }
+              }
+            }
+          },
+          "cost": { "type": "number", "nullable": true, "example": 80 },
+          "costDescription": { "type": "string", "nullable": true, "example": "成人¥40×2 + 儿童免票" },
+          "knowledgeRefs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "format": "uuid" },
+                "title": { "type": "string", "example": "儿童高铁购票须知" }
+              }
+            }
+          }
+        }
+      },
+      "CreateItineraryDto": {
+        "type": "object",
+        "required": ["title", "destination"],
+        "properties": {
+          "title": { "type": "string", "example": "三亚5天4晚亲子游" },
+          "destination": { "type": "string", "example": "海南三亚" },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" },
+          "adults": { "type": "integer", "default": 2 },
+          "children": { "type": "integer", "default": 1 },
+          "childAge": { "type": "integer" },
+          "pace": { "type": "string", "enum": ["轻松", "适中", "紧凑"] },
+          "budget": { "type": "number" },
+          "itineraryJson": { "$ref": "#/components/schemas/ItineraryJson" }
+        }
+      },
+      "UpdateItineraryDto": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "destination": { "type": "string" },
+          "startDate": { "type": "string", "format": "date" },
+          "endDate": { "type": "string", "format": "date" },
+          "adults": { "type": "integer" },
+          "children": { "type": "integer" },
+          "childAge": { "type": "integer" },
+          "pace": { "type": "string", "enum": ["轻松", "适中", "紧凑"] },
+          "budget": { "type": "number" },
+          "itineraryJson": { "$ref": "#/components/schemas/ItineraryJson" }
+        }
+      },
+      "PaginatedItineraries": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Itinerary" }
+          },
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" }
+        }
+      },
+      "Knowledge": {
+        "type": "object",
+        "description": "知识条目（不含正文）",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string", "example": "儿童机票购买完整指南" },
+          "summary": { "type": "string", "example": "详细说明0-2岁婴儿票与2-12岁儿童票的价格规则、座位政策..." },
+          "category": { "type": "string", "example": "交通出行" },
+          "categorySlug": { "type": "string", "example": "traffic" },
+          "ageRange": { "type": "string", "example": "all" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "views": { "type": "integer", "example": 23000 },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "KnowledgeDetail": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Knowledge" },
+          {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "string",
+                "description": "正文内容（Markdown 格式）"
+              },
+              "relatedTemplates": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "format": "uuid" },
+                    "title": { "type": "string" }
+                  }
+                }
+              },
+              "relatedKnowledges": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/Knowledge" }
+              }
+            }
+          }
+        ]
+      },
+      "PaginatedKnowledge": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Knowledge" }
+          },
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string", "example": "交通出行" },
+          "slug": { "type": "string", "example": "traffic" },
+          "icon": { "type": "string", "example": "✈️" },
+          "children": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Category" }
+          }
+        }
+      },
+      "Destination": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string", "example": "三亚" },
+          "englishName": { "type": "string", "example": "Sanya" },
+          "emoji": { "type": "string", "example": "🏝️" },
+          "region": { "type": "string", "example": "华南" },
+          "bestSeason": { "type": "string", "example": "11月-4月 · 温暖避寒" },
+          "kidFriendly": { "type": "number", "example": 9.2 },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "seasonTags": { "type": "array", "items": { "type": "string" } },
+          "ageRange": { "type": "string", "example": "3-12岁推荐" },
+          "knowledgeCount": { "type": "integer", "example": 32 },
+          "color": { "type": "string", "example": "#4A90D9" }
+        }
+      },
+      "PaginatedDestinations": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Destination" }
+          },
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" }
+        }
+      },
+      "ChatMessage": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["user", "assistant", "system"]
+          },
+          "content": { "type": "string" },
+          "knowledgeRefs": {
+            "type": "array",
+            "description": "关联知识引用",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "format": "uuid" },
+                "title": { "type": "string" },
+                "relevance": { "type": "number", "description": "相关度 0-1" }
+              }
+            }
+          },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SseEvent": {
+        "type": "object",
+        "description": "SSE 事件数据结构",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["step", "text", "transport", "hotel", "attraction", "restaurant", "budget", "knowledge", "complete", "error"]
+          },
+          "content": { "type": "string" },
+          "data": { "description": "事件附带数据" }
+        }
+      }
+    }
+  }
+}

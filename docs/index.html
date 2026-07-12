@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>童行AI - 亲子旅游规划 + 知识库</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4A90D9',
+                        accent: '#F5A623',
+                        success: '#7EB8A0',
+                        danger: '#EF4444',
+                        'bg-base': '#FFFBF5',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        card: '0 2px 8px rgba(0,0,0,0.06)',
+                        'card-hover': '0 4px 16px rgba(0,0,0,0.08)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .timeline-line {
+                @apply absolute left-[18px] top-2 bottom-2 border-l-2 border-dashed border-slate-300 -z-0;
+            }
+            .timeline-emoji {
+                @apply absolute left-[11px] top-1.5 z-10 text-sm leading-none;
+            }
+            .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+            .scrollbar-thin::-webkit-scrollbar-thumb { @apply bg-slate-300 rounded-full; }
+            .scrollbar-thin::-webkit-scrollbar-track { @apply bg-transparent; }
+            .nav-active {
+                @apply text-primary font-medium border-b-2 border-primary h-16 flex items-center;
+            }
+            .category-item {
+                @apply px-3 py-2 rounded-md text-sm cursor-pointer transition-colors;
+            }
+            .category-item.active {
+                @apply bg-primary/10 text-primary font-medium;
+            }
+            .category-item:hover:not(.active) {
+                @apply bg-slate-100 text-slate-800;
+            }
+            .knowledge-card {
+                @apply bg-white rounded-lg p-4 shadow-card hover:shadow-card-hover transition-shadow cursor-pointer border border-transparent;
+            }
+            .knowledge-card.active {
+                @apply border-primary bg-primary/5;
+            }
+        }
+    </style>
+</head>
+<body class="bg-bg-base text-slate-700 font-sans h-screen flex flex-col overflow-hidden">
+
+    <!-- ========== 登录页 ========== -->
+    <div id="page-login" class="fixed inset-0 z-50 flex items-center justify-center bg-bg-base">
+        <div class="w-full max-w-sm mx-4">
+            <!-- Logo -->
+            <div class="text-center mb-8">
+                <div class="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-white text-2xl font-bold mx-auto shadow-lg shadow-primary/20">童</div>
+                <h1 class="text-2xl font-bold text-slate-800 mt-4">童行AI</h1>
+                <p class="text-sm text-slate-500 mt-1">亲子旅游智能规划平台</p>
+            </div>
+
+            <!-- 登录卡片 -->
+            <div class="bg-white rounded-2xl shadow-card p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-sm font-medium text-slate-700 mb-1 block">手机号</label>
+                        <input id="loginPhone" type="tel" placeholder="输入手机号" value="13800138000" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                    </div>
+                    <div>
+                        <label class="text-sm font-medium text-slate-700 mb-1 block">验证码</label>
+                        <div class="flex gap-2">
+                            <input id="loginCode" type="text" placeholder="输入验证码" value="123456" class="flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                            <button class="px-4 py-2.5 text-sm text-primary border border-primary rounded-lg hover:bg-primary/5 whitespace-nowrap">获取验证码</button>
+                        </div>
+                    </div>
+                    <button id="loginBtn" class="w-full py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition shadow-sm shadow-primary/20">
+                        登录 / 注册
+                    </button>
+                    <div class="text-xs text-slate-400 text-center">
+                        登录即表示同意 <span class="text-primary cursor-pointer">《用户协议》</span> 和 <span class="text-primary cursor-pointer">《隐私政策》</span>
+                    </div>
+                </div>
+
+                <!-- 分割线 -->
+                <div class="flex items-center gap-3 my-5">
+                    <div class="flex-1 h-px bg-slate-200"></div>
+                    <span class="text-xs text-slate-400">Demo 快速填充</span>
+                    <div class="flex-1 h-px bg-slate-200"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="p-2.5 border border-slate-200 rounded-lg text-xs text-slate-600 hover:border-primary hover:text-primary transition" onclick="fillUser()">
+                        👨‍👩‍👦 亲子用户<br><span class="text-slate-400">2大1小</span>
+                    </button>
+                    <button class="p-2.5 border border-slate-200 rounded-lg text-xs text-slate-600 hover:border-primary hover:text-primary transition" onclick="fillAdmin()">
+                        🔧 管理员<br><span class="text-slate-400">知识库管理</span>
+                    </button>
+                </div>
+            </div>
+
+            <p class="text-center text-xs text-slate-400 mt-6">童行AI v0.1 · 专为亲子家庭设计</p>
+        </div>
+    </div>
+
+    <!-- 顶部全局导航栏 -->
+    <header class="h-16 bg-white border-b border-slate-200 flex items-center px-4 md:px-6 shrink-0 z-30">
+        <!-- 移动端菜单按钮 -->
+        <button id="menuToggle" class="lg:hidden p-2 mr-2 text-slate-600 hover:bg-slate-100 rounded-md">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+
+        <!-- Logo -->
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold">童</div>
+            <span class="text-lg font-semibold text-slate-800 hidden sm:block">童行AI</span>
+        </div>
+
+        <!-- 中间主导航 -->
+        <nav class="hidden md:flex items-center gap-6 ml-10 text-sm">
+            <a href="#" class="nav-item nav-active" data-page="plan">智能规划</a>
+            <a href="#" class="nav-item text-slate-600 hover:text-slate-900 h-16 flex items-center" data-page="knowledge">亲子知识库</a>
+            <a href="#" class="nav-item text-slate-600 hover:text-slate-900 h-16 flex items-center" data-page="destinations">目的地库</a>
+            <a href="#" class="nav-item text-slate-600 hover:text-slate-900 h-16 flex items-center" data-page="itineraries">我的行程</a>
+        </nav>
+
+        <div class="ml-auto flex items-center gap-4">
+            <!-- 对话面板切换按钮 - 小屏显示 -->
+            <button id="chatToggle" class="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-md relative">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-accent rounded-full"></span>
+            </button>
+            
+            <button class="p-2 text-slate-600 hover:bg-slate-100 rounded-md hidden sm:block">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+            </button>
+
+            <!-- 用户头像 -->
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-slate-200 overflow-hidden">
+                    <img src="https://picsum.photos/32/32?random=1" alt="用户头像" class="w-full h-full object-cover">
+                </div>
+                <span class="text-sm hidden md:block">亲子家庭</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主体内容区 - 页面切换容器 -->
+    <main class="flex-1 flex overflow-hidden relative">
+
+        <!-- ===================== 页面1：智能规划工作台 ===================== -->
+        <div id="page-plan" class="page-content w-full flex overflow-hidden hidden">
+
+            <!-- 左侧行程大纲侧边栏 -->
+            <aside id="sidebar" class="fixed lg:relative inset-y-0 left-0 z-20 w-60 bg-white border-r border-slate-200 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+                <div class="p-4 border-b border-slate-100">
+                    <h2 class="font-semibold text-slate-800 text-sm">三亚5天4晚亲子游</h2>
+                    <div class="flex items-center gap-1 mt-1">
+                        <span class="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">2大1小</span>
+                        <span class="text-xs text-slate-500">孩子5岁</span>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1">
+                    <div class="text-xs text-slate-400 px-2 py-1">行程大纲</div>
+                    <div class="day-item p-2 rounded-md bg-primary/10 text-primary text-sm cursor-pointer">
+                        <div class="font-medium">Day 1</div>
+                        <div class="text-xs text-slate-500 mt-0.5">抵达三亚 · 海边漫步</div>
+                    </div>
+                    <div class="day-item p-2 rounded-md hover:bg-slate-100 text-sm cursor-pointer">
+                        <div class="font-medium text-slate-700">Day 2</div>
+                        <div class="text-xs text-slate-500 mt-0.5">亚特兰蒂斯水世界</div>
+                    </div>
+                    <div class="day-item p-2 rounded-md hover:bg-slate-100 text-sm cursor-pointer">
+                        <div class="font-medium text-slate-700">Day 3</div>
+                        <div class="text-xs text-slate-500 mt-0.5">亚龙湾热带天堂</div>
+                    </div>
+                    <div class="day-item p-2 rounded-md hover:bg-slate-100 text-sm cursor-pointer">
+                        <div class="font-medium text-slate-700">Day 4</div>
+                        <div class="text-xs text-slate-500 mt-0.5">南山文化旅游区</div>
+                    </div>
+                    <div class="day-item p-2 rounded-md hover:bg-slate-100 text-sm cursor-pointer">
+                        <div class="font-medium text-slate-700">Day 5</div>
+                        <div class="text-xs text-slate-500 mt-0.5">免税店 · 返程</div>
+                    </div>
+                </div>
+
+                <!-- 底部工具区 -->
+                <div class="p-3 border-t border-slate-100 space-y-2">
+                    <button class="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-slate-100 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        方案对比
+                    </button>
+                    <button class="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-slate-100 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        导出行程
+                    </button>
+                    <button class="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-slate-100 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                        出行清单
+                    </button>
+                </div>
+            </aside>
+
+            <!-- 遮罩层 - 移动端侧边栏弹出时 -->
+            <div id="sidebarOverlay" class="fixed inset-0 bg-black/30 z-10 hidden lg:hidden"></div>
+
+            <!-- 中间主内容区 - 行程可视化预览 -->
+            <section class="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-6">
+                <!-- 顶部总览条 -->
+                <div class="bg-white rounded-xl shadow-card p-4 md:p-5 mb-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h1 class="text-xl font-semibold text-slate-800">三亚5天4晚 · 亲子轻松游</h1>
+                            <div class="flex flex-wrap items-center gap-2 mt-2 text-sm">
+                                <span class="flex items-center gap-1 text-slate-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    海南三亚
+                                </span>
+                                <span class="text-slate-300 hidden sm:block">|</span>
+                                <span class="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-medium">2大1小 · 5岁儿童</span>
+                                <span class="bg-success/10 text-success px-2 py-0.5 rounded text-xs font-medium">亲子友好度 9.2</span>
+                                <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs">轻松节奏</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="text-right">
+                                <div class="text-xs text-slate-500">三人总预算预估</div>
+                                <div class="text-xl font-bold text-accent">¥ 8,650</div>
+                            </div>
+                            <button class="hidden sm:flex items-center gap-1 px-3 py-2 bg-primary text-white rounded-md text-sm hover:bg-primary/90 transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                导出PDF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 空状态（无行程时显示） -->
+                <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20 text-center">
+                    <div class="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mb-4">
+                        <svg class="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-medium text-slate-700 mb-2">还没有行程计划</h3>
+                    <p class="text-sm text-slate-500 max-w-sm mb-6">在右侧对话中输入目的地、天数和人数，我来帮你安排一次适合全家人的亲子旅行。</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-full text-sm cursor-pointer hover:bg-slate-200 transition">去三亚5天</span>
+                        <span class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-full text-sm cursor-pointer hover:bg-slate-200 transition">上海周边亲子游</span>
+                        <span class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-full text-sm cursor-pointer hover:bg-slate-200 transition">暑假带娃去哪</span>
+                    </div>
+                </div>
+
+                <!-- 节点类型图例 -->
+                <div class="flex items-center gap-4 mb-4 text-xs text-slate-500 px-1">
+                    <span>图例：</span>
+                    <span class="flex items-center gap-1">🚗 交通</span>
+                    <span class="flex items-center gap-1">🏔️ 景点</span>
+                    <span class="flex items-center gap-1">🍽️ 餐饮</span>
+                    <span class="flex items-center gap-1">🏨 住宿</span>
+                    <span class="flex items-center gap-1">😴 休息</span>
+                </div>
+
+                <!-- Day 0 出发日 -->
+                <div class="bg-white rounded-xl shadow-card mb-6 overflow-hidden border-l-4 border-l-primary">
+                    <div class="bg-slate-50 px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <h3 class="font-semibold text-slate-800">🚀 出发日 · 苏州→三亚</h3>
+                            <span class="text-xs text-slate-500">建议从上海出发</span>
+                        </div>
+                        <button class="text-sm text-primary hover:text-primary/80" onclick="openCompare()">方案对比</button>
+                    </div>
+
+                    <div class="p-5 relative">
+                        <div class="timeline-line"></div>
+
+                        <!-- 节点1：苏州→上海高铁 -->
+                        <div class="relative pl-10 pb-6">
+                            <div class="timeline-emoji">🚗</div>
+                            <div class="text-sm text-slate-500">08:00 - 08:36</div>
+                            <h4 class="font-medium text-slate-800 mt-1">苏州站 → 上海虹桥站 · 高铁 G1234</h4>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">36分钟</span>
+                                <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">儿童免票（6岁以下）</span>
+                                <span class="knowledge-tag text-xs bg-primary/10 text-primary px-2 py-0.5 rounded cursor-pointer hover:bg-primary/20" data-kid="7">
+                                    📚 儿童高铁购票须知
+                                </span>
+                            </div>
+                            <div class="text-sm text-slate-500 mt-2">成人¥40×2 + 儿童免票 = <span class="font-medium text-accent">¥ 80</span></div>
+                        </div>
+
+                        <!-- 节点2：上海→三亚航班 -->
+                        <div class="relative pl-10 pb-0">
+                            <div class="timeline-emoji">🚗</div>
+                            <div class="text-sm text-slate-500">10:30 - 13:40</div>
+                            <h4 class="font-medium text-slate-800 mt-1">上海虹桥 → 三亚凤凰 · 航班 HU7321</h4>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">3h10min</span>
+                                <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">儿童票5折</span>
+                                <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">已选安全座位</span>
+                                <span class="knowledge-tag text-xs bg-primary/10 text-primary px-2 py-0.5 rounded cursor-pointer hover:bg-primary/20" data-kid="1">
+                                    📚 儿童乘机须知
+                                </span>
+                            </div>
+                            <div class="text-sm text-slate-500 mt-2">成人¥580×2 + 儿童¥290（5折）= <span class="font-medium text-accent">¥ 1,450</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Day 1 行程卡片 -->
+                <div class="bg-white rounded-xl shadow-card mb-6 overflow-hidden">
+                    <div class="bg-slate-50 px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <h3 class="font-semibold text-slate-800">Day 1 · 抵达适应日</h3>
+                            <span class="text-xs text-slate-500">步行约2km · 适合儿童节奏</span>
+                        </div>
+                        <button class="text-sm text-primary hover:text-primary/80">编辑</button>
+                    </div>
+
+                    <div class="p-5 relative">
+                        <div class="timeline-line"></div>
+
+                        <!-- 节点1：抵达 -->
+                        <div class="relative pl-10 pb-6">
+                            <div class="timeline-emoji">🚗</div>
+                            <div class="text-sm text-slate-500">09:30 - 12:00</div>
+                            <h4 class="font-medium text-slate-800 mt-1">凤凰国际机场抵达 · 接机前往酒店</h4>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">专车接送 · 儿童安全座椅</span>
+                                <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">车程约40分钟</span>
+                                <!-- 知识库关联标签 -->
+                                <span class="knowledge-tag text-xs bg-primary/10 text-primary px-2 py-0.5 rounded cursor-pointer hover:bg-primary/20" data-kid="1">
+                                    📚 儿童乘机须知
+                                </span>
+                            </div>
+                            <div class="text-sm text-slate-500 mt-2"><span class="font-medium text-accent">¥ 180</span> 接机车费</div>
+                        </div>
+
+                        <!-- 节点2：酒店入住 -->
+                        <div class="relative pl-10 pb-6">
+                            <div class="timeline-emoji">🏨</div>
+                            <div class="text-sm text-slate-500">12:30 - 14:30</div>
+                            <h4 class="font-medium text-slate-800 mt-1">三亚亚特兰蒂斯酒店 · 家庭房入住 + 午休</h4>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">含3人早餐</span>
+                                <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">儿童乐园 · 母婴室</span>
+                                <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">儿童拖鞋/浴袍</span>
+                                <span class="knowledge-tag text-xs bg-primary/10 text-primary px-2 py-0.5 rounded cursor-pointer hover:bg-primary/20" data-kid="2">
+                                    📚 亲子酒店挑选指南
+                                </span>
+                            </div>
+                            <div class="text-sm text-slate-500 mt-2">家庭房 · 4晚合计 <span class="font-medium text-accent">¥ 4,200</span> <span class="text-xs text-slate-400">（含3人早餐）</span></div>
+                        </div>
+
+                        <!-- 节点3：午餐 -->
+                        <div class="relative pl-10 pb-6">
+                            <div class="timeline-emoji">🍽️</div>
+                            <div class="text-sm text-slate-500">15:00 - 16:30</div>
+                            <h4 class="font-medium text-slate-800 mt-1">酒店内亲子餐厅 · 海南特色简餐</h4>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">提供儿童餐</span>
+                                <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">宝宝餐具</span>
+                            </div>
+                            <div class="text-sm text-slate-500 mt-2">成人¥110×2 + 儿童¥40 = <span class="font-medium text-accent">¥ 260</span></div>
+                        </div>
+
+                        <!-- 节点4：海边漫步 -->
+                        <div class="relative pl-10 pb-0">
+                            <div class="timeline-emoji">🏔️</div>
+                            <div class="text-sm text-slate-500">17:00 - 19:00</div>
+                            <h4 class="font-medium text-slate-800 mt-1">海棠湾沙滩漫步 · 赶海玩沙</h4>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">沙滩平缓安全</span>
+                                <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded">免费开放</span>
+                                <span class="knowledge-tag text-xs bg-primary/10 text-primary px-2 py-0.5 rounded cursor-pointer hover:bg-primary/20" data-kid="3">
+                                    📚 海边亲子游玩安全指南
+                                </span>
+                            </div>
+                            <div class="text-sm text-slate-500 mt-2"><span class="font-medium text-success">免费</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Day 2 行程卡片 -->
+                <div class="bg-white rounded-xl shadow-card overflow-hidden">
+                    <div class="bg-slate-50 px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <h3 class="font-semibold text-slate-800">Day 2 · 水世界畅玩</h3>
+                            <span class="text-xs text-slate-500">全天室内外结合 · 预留休息区</span>
+                        </div>
+                        <button class="text-sm text-primary hover:text-primary/80">编辑</button>
+                    </div>
+
+                    <div class="p-5 relative">
+                        <div class="timeline-line"></div>
+
+                        <!-- 节点1：早餐 -->
+                        <div class="relative pl-10 pb-6">
+                            <div class="timeline-emoji">🍽️</div>
+                            <div class="text-sm text-slate-500">08:30 - 10:00</div>
+                            <h4 class="font-medium text-slate-800 mt-1">酒店自助早餐</h4>
+                            <div class="text-sm text-slate-500 mt-2">已含在房费内 · 儿童早餐免费</div>
+                        </div>
+
+                        <!-- 节点2：景点 -->
+                        <div class="relative pl-10 pb-6">
+                            <div class="timeline-emoji">🏔️</div>
+                            <div class="text-sm text-slate-500">10:30 - 16:00</div>
+                            <h4 class="font-medium text-slate-800 mt-1">亚特兰蒂斯水世界 · 亲子区域畅玩</h4>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">1.2m以下儿童免票</span>
+                                <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">有儿童专属游玩区</span>
+                                <span class="text-xs bg-danger/10 text-danger px-2 py-0.5 rounded">部分项目有身高限制</span>
+                                <span class="knowledge-tag text-xs bg-primary/10 text-primary px-2 py-0.5 rounded cursor-pointer hover:bg-primary/20" data-kid="4">
+                                    📚 景点儿童免票政策汇总
+                                </span>
+                            </div>
+                            <div class="text-sm text-slate-500 mt-2">
+                                三人门票：成人×2 + 儿童免票 = <span class="text-accent font-medium">¥ 596</span>
+                            </div>
+                        </div>
+
+                        <!-- 节点3：午餐 -->
+                        <div class="relative pl-10 pb-6">
+                            <div class="timeline-emoji">🍽️</div>
+                            <div class="text-sm text-slate-500">12:30 - 13:30</div>
+                            <h4 class="font-medium text-slate-800 mt-1">园区内餐厅午餐</h4>
+                            <div class="text-sm text-slate-500 mt-2">成人¥150×2 + 儿童¥50 = <span class="font-medium text-accent">¥ 350</span></div>
+                        </div>
+
+                        <!-- 节点4：晚餐 -->
+                        <div class="relative pl-10 pb-0">
+                            <div class="timeline-emoji">🍽️</div>
+                            <div class="text-sm text-slate-500">18:00 - 19:30</div>
+                            <h4 class="font-medium text-slate-800 mt-1">海棠湾海鲜餐厅 · 亲子友好</h4>
+                            <div class="text-sm text-slate-500 mt-2">成人¥200×2 + 儿童¥80 = <span class="font-medium text-accent">¥ 480</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center text-sm text-slate-400 py-6">
+                    剩余 3 天行程可向下滚动查看 · 可直接在右侧对话修改行程
+                </div>
+            </section>
+
+            <!-- 右侧 AI Agent 对话面板 -->
+            <aside id="chatPanel" class="fixed lg:relative inset-y-0 right-0 z-20 w-full sm:w-96 bg-white border-l border-slate-200 flex flex-col transform translate-x-full lg:translate-x-0 transition-transform duration-300">
+                <!-- 对话头部 -->
+                <div class="h-14 border-b border-slate-100 flex items-center justify-between px-4 shrink-0">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-slate-800">童行规划师</div>
+                            <div class="text-xs text-success">在线 · 实时修改行程</div>
+                        </div>
+                    </div>
+                    <button id="closeChat" class="lg:hidden p-1.5 text-slate-500 hover:bg-slate-100 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- 对话消息区 -->
+                <div id="chatMessages" class="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4">
+                    <!-- AI 生成进度骨架（默认隐藏） -->
+                    <div id="aiProgress" class="hidden">
+                        <div class="flex gap-2">
+                            <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-0.5">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                </svg>
+                            </div>
+                            <div class="bg-slate-50 rounded-lg rounded-tl-none p-4 text-sm max-w-[85%]">
+                                <p class="text-slate-600 font-medium">🤔 正在规划你的行程…</p>
+                                <div class="mt-3 space-y-2">
+                                    <div class="flex items-center gap-2 text-xs">
+                                        <span class="text-success">✅</span>
+                                        <span class="text-success">已读取出行需求</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-xs">
+                                        <span class="text-success">✅</span>
+                                        <span class="text-success">已查询交通信息</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-xs">
+                                        <span class="inline-block w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
+                                        <span class="text-primary font-medium">正在比价航班方案…</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-xs text-slate-400">
+                                        <span class="inline-block w-4 h-4 rounded-full border-2 border-slate-200"></span>
+                                        <span>检索景点与酒店</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-xs text-slate-400">
+                                        <span class="inline-block w-4 h-4 rounded-full border-2 border-slate-200"></span>
+                                        <span>生成每日行程</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI 欢迎消息 -->
+                    <div class="flex gap-2">
+                        <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                            </svg>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg rounded-tl-none p-3 text-sm max-w-[85%]">
+                            <p>已为你生成三亚5天4晚亲子行程，按5岁孩子节奏设计，每天预留充足午休与休息时间～</p>
+                            <p class="mt-2">你可以直接告诉我调整需求，也可以点击下方快捷指令：</p>
+                            
+                            <!-- 快捷指令按钮 -->
+                            <div class="grid grid-cols-2 gap-2 mt-3">
+                                <button class="quick-cmd text-xs bg-white border border-slate-200 rounded-md px-2 py-1.5 text-left hover:border-primary hover:text-primary transition">
+                                    放慢行程节奏
+                                </button>
+                                <button class="quick-cmd text-xs bg-white border border-slate-200 rounded-md px-2 py-1.5 text-left hover:border-primary hover:text-primary transition">
+                                    更换亲子酒店
+                                </button>
+                                <button class="quick-cmd text-xs bg-white border border-slate-200 rounded-md px-2 py-1.5 text-left hover:border-primary hover:text-primary transition">
+                                    总预算压缩到8000内
+                                </button>
+                                <button class="quick-cmd text-xs bg-white border border-slate-200 rounded-md px-2 py-1.5 text-left hover:border-primary hover:text-primary transition">
+                                    增加美食推荐
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI 回复带知识库引用示例 -->
+                    <div class="flex gap-2">
+                        <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                            </svg>
+                        </div>
+                        <div class="bg-slate-50 rounded-lg rounded-tl-none p-3 text-sm max-w-[85%]">
+                            <p>关于儿童机票购买，整理了核心要点：</p>
+                            <ul class="list-disc list-inside mt-1 space-y-0.5 text-slate-600">
+                                <li>0-2岁婴儿票：成人全价的10%，无座</li>
+                                <li>2-12岁儿童票：成人全价的50%，有座</li>
+                                <li>部分特价票儿童可同享，需核对退改规则</li>
+                            </ul>
+                            <!-- 知识库引用卡片 -->
+                            <div class="mt-3 bg-white border border-primary/20 rounded-md p-2 cursor-pointer hover:bg-primary/5" onclick="switchToKnowledge(1)">
+                                <div class="flex items-center gap-2">
+                                    <div class="text-primary text-lg">📖</div>
+                                    <div>
+                                        <div class="text-xs font-medium text-slate-800">儿童机票购买完整指南</div>
+                                        <div class="text-xs text-slate-500">来源：童行亲子知识库</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 底部输入区 -->
+                <div class="border-t border-slate-100 p-3 shrink-0">
+                    <div class="flex items-end gap-2">
+                        <button class="p-2 text-slate-500 hover:bg-slate-100 rounded-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                        </button>
+                        <div class="flex-1 relative">
+                            <textarea id="messageInput" rows="2" placeholder="告诉我你的需求，比如「把第三天的景点换成动物园」" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"></textarea>
+                        </div>
+                        <button id="sendBtn" class="p-2 bg-primary text-white rounded-md hover:bg-primary/90 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="text-xs text-slate-400 mt-2 text-center">
+                        支持自然语言修改行程 · 回答均来自官方知识库
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 对话面板遮罩 - 移动端 -->
+            <div id="chatOverlay" class="fixed inset-0 bg-black/30 z-10 hidden lg:hidden"></div>
+        </div>
+
+        <!-- ===================== 页面2：亲子知识库 ===================== -->
+        <div id="page-knowledge" class="page-content w-full flex overflow-hidden hidden">
+            
+            <!-- 左侧分类导航 -->
+            <aside class="hidden md:block w-60 bg-white border-r border-slate-200 flex flex-col shrink-0">
+                <div class="p-4 border-b border-slate-100">
+                    <h2 class="font-semibold text-slate-800">知识分类</h2>
+                    <p class="text-xs text-slate-500 mt-1">共 1286 条亲子出行知识</p>
+                </div>
+                <div class="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1">
+                    <div class="category-item active" data-cat="all">📚 全部知识</div>
+                    
+                    <div class="text-xs text-slate-400 px-3 pt-3 pb-1">目的地指南</div>
+                    <div class="category-item pl-6" data-cat="sanya">🏝️ 三亚亲子攻略</div>
+                    <div class="category-item pl-6" data-cat="yunnan">🌄 云南亲子攻略</div>
+                    <div class="category-item pl-6" data-cat="chengdu">🐼 成都亲子攻略</div>
+                    <div class="category-item pl-6" data-cat="shanghai">🎡 上海亲子攻略</div>
+
+                    <div class="text-xs text-slate-400 px-3 pt-3 pb-1">出行全流程</div>
+                    <div class="category-item" data-cat="prepare">🎒 出行准备</div>
+                    <div class="category-item" data-cat="traffic">✈️ 交通出行</div>
+                    <div class="category-item" data-cat="hotel">🏨 住宿攻略</div>
+                    <div class="category-item" data-cat="scenic">🎢 景点游玩</div>
+                    <div class="category-item" data-cat="food">🍜 餐饮美食</div>
+                    <div class="category-item" data-cat="safety">🛡️ 安全应急</div>
+
+                    <div class="text-xs text-slate-400 px-3 pt-3 pb-1">按年龄筛选</div>
+                    <div class="category-item" data-cat="age03">👶 0-3岁婴幼儿</div>
+                    <div class="category-item" data-cat="age36">🧒 3-6岁学龄前</div>
+                    <div class="category-item" data-cat="age612">👦 6-12岁学龄期</div>
+                </div>
+
+                <div class="p-3 border-t border-slate-100">
+                    <button class="w-full py-2 text-sm text-primary border border-primary rounded-md hover:bg-primary/5 transition">
+                        提交知识反馈
+                    </button>
+                </div>
+            </aside>
+
+            <!-- 中间：搜索 + 知识列表 -->
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <!-- 搜索栏 -->
+                <div class="bg-white border-b border-slate-200 p-4 shrink-0">
+                    <div class="max-w-2xl mx-auto relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input type="text" placeholder="搜索亲子出行知识，如「儿童机票」「沙滩防晒」「退烧药携带」" class="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                    </div>
+                    <div class="max-w-2xl mx-auto mt-3 flex items-center gap-2 text-xs">
+                        <span class="text-slate-500 shrink-0">热门搜索：</span>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded cursor-pointer hover:bg-slate-200">儿童免票标准</span>
+                            <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded cursor-pointer hover:bg-slate-200">婴儿车登机</span>
+                            <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded cursor-pointer hover:bg-slate-200">亲子酒店挑选</span>
+                            <span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded cursor-pointer hover:bg-slate-200">海边防晒攻略</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 知识列表 -->
+                <div class="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-6 bg-bg-base">
+                    <div class="max-w-3xl mx-auto space-y-3">
+                        <!-- 知识列表空状态（默认隐藏） -->
+                        <div id="knowledgeEmpty" class="hidden flex flex-col items-center justify-center py-16 text-center">
+                            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-3">
+                                <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-sm font-medium text-slate-600 mb-1">没有找到相关知识</h3>
+                            <p class="text-xs text-slate-400">试试其他关键词，或浏览分类导航</p>
+                        </div>
+
+                        <!-- 知识卡片1 -->
+                        <div class="knowledge-card active" data-kid="1">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-slate-800">儿童机票购买完整指南（婴儿/儿童票区别、证件要求）</h4>
+                                    <p class="text-sm text-slate-500 mt-1 line-clamp-2">详细说明0-2岁婴儿票与2-12岁儿童票的价格规则、座位政策、所需证件，以及婴儿车、安全座椅的托运与登机规范，帮你避开购票常见坑。</p>
+                                    <div class="flex flex-wrap items-center gap-2 mt-3">
+                                        <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">交通出行</span>
+                                        <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">全年龄段适用</span>
+                                        <span class="text-xs text-slate-400">浏览 2.3w · 更新于 2026-06</span>
+                                    </div>
+                                </div>
+                                <button class="shrink-0 p-1.5 text-slate-400 hover:text-accent">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 知识卡片2 -->
+                        <div class="knowledge-card" data-kid="2">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-slate-800">亲子酒店挑选标准：这8个设施一定要有</h4>
+                                    <p class="text-sm text-slate-500 mt-1 line-clamp-2">从家庭房房型、儿童早餐政策、母婴室、儿童乐园、泳池浅水区、安保措施等8个维度，教你快速筛选真正适合带娃入住的酒店。</p>
+                                    <div class="flex flex-wrap items-center gap-2 mt-3">
+                                        <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">住宿攻略</span>
+                                        <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">3-6岁推荐</span>
+                                        <span class="text-xs text-slate-400">浏览 1.8w · 更新于 2026-05</span>
+                                    </div>
+                                </div>
+                                <button class="shrink-0 p-1.5 text-slate-400 hover:text-accent">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 知识卡片3 -->
+                        <div class="knowledge-card" data-kid="3">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-slate-800">海边亲子游玩安全指南：防晒、防溺水、赶海注意事项</h4>
+                                    <p class="text-sm text-slate-500 mt-1 line-clamp-2">包含不同年龄段儿童的防晒方案、海边玩水安全距离、赶海必备物品与风险规避、常见海洋生物伤害处理方法等实用内容。</p>
+                                    <div class="flex flex-wrap items-center gap-2 mt-3">
+                                        <span class="text-xs bg-danger/10 text-danger px-2 py-0.5 rounded">安全应急</span>
+                                        <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">全年龄段适用</span>
+                                        <span class="text-xs text-slate-400">浏览 3.1w · 更新于 2026-06</span>
+                                    </div>
+                                </div>
+                                <button class="shrink-0 p-1.5 text-slate-400 hover:text-accent">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 知识卡片4 -->
+                        <div class="knowledge-card" data-kid="4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-slate-800">全国热门景点儿童免票/半票身高年龄标准汇总</h4>
+                                    <p class="text-sm text-slate-500 mt-1 line-clamp-2">整理全国5A景区及主流主题乐园的儿童票务政策，区分身高免票、年龄免票两种规则，附门票省钱技巧与证件携带建议。</p>
+                                    <div class="flex flex-wrap items-center gap-2 mt-3">
+                                        <span class="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded">省钱攻略</span>
+                                        <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">景点游玩</span>
+                                        <span class="text-xs text-slate-400">浏览 4.7w · 更新于 2026-07</span>
+                                    </div>
+                                </div>
+                                <button class="shrink-0 p-1.5 text-slate-400 hover:text-accent">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 知识卡片5 -->
+                        <div class="knowledge-card" data-kid="5">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-slate-800">0-3岁宝宝出行必备物品清单（精简版）</h4>
+                                    <p class="text-sm text-slate-500 mt-1 line-clamp-2">按衣物、喂养、护理、睡眠、药品五大类整理，区分短途与长途出行，帮你告别过度打包，同时覆盖所有突发状况。</p>
+                                    <div class="flex flex-wrap items-center gap-2 mt-3">
+                                        <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">出行准备</span>
+                                        <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">0-3岁专属</span>
+                                        <span class="text-xs text-slate-400">浏览 2.9w · 更新于 2026-06</span>
+                                    </div>
+                                </div>
+                                <button class="shrink-0 p-1.5 text-slate-400 hover:text-accent">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 知识卡片6 -->
+                        <div class="knowledge-card" data-kid="6">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex-1">
+                                    <h4 class="font-medium text-slate-800">儿童出行常用药品清单与使用注意事项</h4>
+                                    <p class="text-sm text-slate-500 mt-1 line-clamp-2">涵盖退烧、肠胃、过敏、外伤、晕车五大类常用药，标注不同年龄用量、禁忌与携带规范，附航空托运/登机要求。</p>
+                                    <div class="flex flex-wrap items-center gap-2 mt-3">
+                                        <span class="text-xs bg-danger/10 text-danger px-2 py-0.5 rounded">安全应急</span>
+                                        <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">出行准备</span>
+                                        <span class="text-xs text-slate-400">浏览 3.5w · 更新于 2026-07</span>
+                                    </div>
+                                </div>
+                                <button class="shrink-0 p-1.5 text-slate-400 hover:text-accent">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：知识详情面板 -->
+            <aside class="hidden xl:block w-[420px] bg-white border-l border-slate-200 flex flex-col shrink-0">
+                <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="font-semibold text-slate-800">知识详情</h3>
+                    <div class="flex items-center gap-1">
+                        <button class="p-1.5 text-slate-500 hover:bg-slate-100 rounded" title="收藏">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                            </svg>
+                        </button>
+                        <button class="p-1.5 text-slate-500 hover:bg-slate-100 rounded" title="分享">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto scrollbar-thin p-5">
+                    <!-- 详情标题 -->
+                    <h2 class="text-lg font-semibold text-slate-800">儿童机票购买完整指南</h2>
+                    <div class="flex flex-wrap items-center gap-2 mt-2">
+                        <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">交通出行</span>
+                        <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">全年龄段适用</span>
+                        <span class="text-xs text-slate-400">更新于 2026-06-15</span>
+                    </div>
+
+                    <!-- 正文内容 -->
+                    <div class="mt-5 space-y-4 text-sm text-slate-600">
+                        <div>
+                            <h4 class="font-medium text-slate-800 mb-2">一、票价与座位规则</h4>
+                            <ul class="list-disc list-inside space-y-1.5 pl-1">
+                                <li><strong>婴儿票（0-2周岁）</strong>：按成人全价票的10%收取，无独立座位，需大人怀抱乘机</li>
+                                <li><strong>儿童票（2-12周岁）</strong>：按成人全价票的50%收取，有独立座位，可享受餐食</li>
+                                <li>部分特价促销时，儿童票可购买成人折扣票，需提前核对退改规则</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h4 class="font-medium text-slate-800 mb-2">二、所需证件</h4>
+                            <ul class="list-disc list-inside space-y-1.5 pl-1">
+                                <li>国内航班：户口本、出生证明、身份证三选一即可</li>
+                                <li>国际航班：需办理儿童护照，部分国家需出生证明公证</li>
+                                <li>建议优先使用身份证，安检通关速度更快</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h4 class="font-medium text-slate-800 mb-2">三、婴儿车与安全座椅</h4>
+                            <ul class="list-disc list-inside space-y-1.5 pl-1">
+                                <li>折叠式婴儿车可免费托运，部分航司允许推至登机口</li>
+                                <li>儿童安全座椅需占用座位，需购买儿童票后使用</li>
+                                <li>伞车类轻便婴儿车多数航司可带上客舱，需提前确认尺寸</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-accent/5 border border-accent/20 rounded-lg p-3">
+                            <div class="font-medium text-accent text-sm mb-1">💡 省钱小贴士</div>
+                            <p class="text-sm text-slate-600">2岁生日当天按婴儿票计算，超过当天即需购买儿童票；可选择生日前出发的航班，节省一半机票费用。</p>
+                        </div>
+                    </div>
+
+                    <!-- 关联行程 -->
+                    <div class="mt-6">
+                        <h4 class="font-medium text-slate-800 mb-3">关联行程模板</h4>
+                        <div class="space-y-2">
+                            <div class="p-3 border border-slate-200 rounded-lg hover:border-primary cursor-pointer transition">
+                                <div class="text-sm font-medium text-slate-700">三亚5天4晚亲子轻松游</div>
+                                <div class="text-xs text-slate-500 mt-1">2大1小 · 含往返机票 · 总预算8650元</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 相关推荐 -->
+                    <div class="mt-6">
+                        <h4 class="font-medium text-slate-800 mb-3">相关知识推荐</h4>
+                        <div class="space-y-2 text-sm">
+                            <div class="text-primary hover:underline cursor-pointer">儿童高铁购票与乘车须知</div>
+                            <div class="text-primary hover:underline cursor-pointer">婴儿车选购与出行收纳指南</div>
+                            <div class="text-primary hover:underline cursor-pointer">飞机起降时宝宝耳压缓解方法</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 底部操作 -->
+                <div class="p-4 border-t border-slate-100">
+                    <button class="w-full py-2 bg-primary text-white rounded-md text-sm hover:bg-primary/90 transition">
+                        一键应用到当前行程
+                    </button>
+                </div>
+            </aside>
+        </div>
+
+        <!-- ===================== 页面3：目的地库 ===================== -->
+        <div id="page-destinations" class="page-content w-full flex overflow-hidden hidden">
+
+            <!-- 左侧筛选 -->
+            <aside class="hidden md:block w-60 bg-white border-r border-slate-200 flex flex-col shrink-0">
+                <div class="p-4 border-b border-slate-100">
+                    <h2 class="font-semibold text-slate-800">探索目的地</h2>
+                    <p class="text-xs text-slate-500 mt-1">找到适合亲子的旅行地</p>
+                </div>
+                <div class="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1">
+                    <div class="text-xs text-slate-400 px-3 pt-3 pb-1">按区域</div>
+                    <div class="category-item active" data-filter="all">🌏 全部</div>
+                    <div class="category-item" data-filter="south">🏝️ 华南（三亚/桂林）</div>
+                    <div class="category-item" data-filter="southwest">🌄 西南（成都/云南）</div>
+                    <div class="category-item" data-filter="east">🎡 华东（上海/青岛）</div>
+
+                    <div class="text-xs text-slate-400 px-3 pt-3 pb-1">按季节</div>
+                    <div class="category-item" data-filter="spring">🌸 春季推荐</div>
+                    <div class="category-item" data-filter="summer">☀️ 夏季推荐</div>
+                    <div class="category-item" data-filter="autumn">🍂 秋季推荐</div>
+                    <div class="category-item" data-filter="winter">❄️ 冬季推荐</div>
+
+                    <div class="text-xs text-slate-400 px-3 pt-3 pb-1">按年龄段</div>
+                    <div class="category-item" data-filter="age03">👶 0-3岁</div>
+                    <div class="category-item" data-filter="age36">🧒 3-6岁</div>
+                    <div class="category-item" data-filter="age612">👦 6-12岁</div>
+                </div>
+            </aside>
+
+            <!-- 主区：搜索 + 卡片网格 -->
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <div class="bg-white border-b border-slate-200 p-4 shrink-0">
+                    <div class="relative">
+                        <svg class="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input type="text" placeholder="搜索目的地，如「三亚」「海边」" class="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-6 bg-bg-base">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                        <!-- 三亚 -->
+                        <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover transition-shadow overflow-hidden cursor-pointer border border-transparent hover:border-primary/20">
+                            <div class="h-2 bg-primary"></div>
+                            <div class="p-5">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <span class="text-3xl">🏝️</span>
+                                        <h3 class="text-lg font-semibold text-slate-800 mt-1">三亚</h3>
+                                        <span class="text-xs text-slate-400">Sanya</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-slate-500">亲子指数</div>
+                                        <div class="text-xl font-bold text-accent">9.2</div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap gap-1.5 mt-3">
+                                    <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">🏖️ 海边</span>
+                                    <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">🧒 3-12岁推荐</span>
+                                    <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">32条知识</span>
+                                </div>
+                                <div class="text-xs text-slate-500 mt-3">最佳季节：11月-4月 · 温暖避寒</div>
+                                <div class="flex items-center gap-2 mt-4">
+                                    <button class="flex-1 py-1.5 text-xs bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition" onclick="switchToKnowledge()">查看知识</button>
+                                    <button class="flex-1 py-1.5 text-xs bg-primary text-white rounded-md hover:bg-primary/90 transition">开始规划</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 成都 -->
+                        <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover transition-shadow overflow-hidden cursor-pointer border border-transparent hover:border-primary/20">
+                            <div class="h-2 bg-success"></div>
+                            <div class="p-5">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <span class="text-3xl">🐼</span>
+                                        <h3 class="text-lg font-semibold text-slate-800 mt-1">成都</h3>
+                                        <span class="text-xs text-slate-400">Chengdu</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-slate-500">亲子指数</div>
+                                        <div class="text-xl font-bold text-accent">8.8</div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap gap-1.5 mt-3">
+                                    <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">🐼 看熊猫</span>
+                                    <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">🧒 全年龄段</span>
+                                    <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">24条知识</span>
+                                </div>
+                                <div class="text-xs text-slate-500 mt-3">最佳季节：全年 · 美食之都</div>
+                                <div class="flex items-center gap-2 mt-4">
+                                    <button class="flex-1 py-1.5 text-xs bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition">查看知识</button>
+                                    <button class="flex-1 py-1.5 text-xs bg-primary text-white rounded-md hover:bg-primary/90 transition">开始规划</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 上海 -->
+                        <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover transition-shadow overflow-hidden cursor-pointer border border-transparent hover:border-primary/20">
+                            <div class="h-2 bg-accent"></div>
+                            <div class="p-5">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <span class="text-3xl">🎡</span>
+                                        <h3 class="text-lg font-semibold text-slate-800 mt-1">上海</h3>
+                                        <span class="text-xs text-slate-400">Shanghai</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-slate-500">亲子指数</div>
+                                        <div class="text-xl font-bold text-accent">8.5</div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap gap-1.5 mt-3">
+                                    <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">🎠 迪士尼</span>
+                                    <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">🧒 3-12岁推荐</span>
+                                    <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">18条知识</span>
+                                </div>
+                                <div class="text-xs text-slate-500 mt-3">最佳季节：春秋季 · 交通便利</div>
+                                <div class="flex items-center gap-2 mt-4">
+                                    <button class="flex-1 py-1.5 text-xs bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition">查看知识</button>
+                                    <button class="flex-1 py-1.5 text-xs bg-primary text-white rounded-md hover:bg-primary/90 transition">开始规划</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 西双版纳 -->
+                        <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover transition-shadow overflow-hidden cursor-pointer border border-transparent hover:border-primary/20">
+                            <div class="h-2 bg-success"></div>
+                            <div class="p-5">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <span class="text-3xl">🌴</span>
+                                        <h3 class="text-lg font-semibold text-slate-800 mt-1">西双版纳</h3>
+                                        <span class="text-xs text-slate-400">Xishuangbanna</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-slate-500">亲子指数</div>
+                                        <div class="text-xl font-bold text-accent">9.0</div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap gap-1.5 mt-3">
+                                    <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">🌿 热带雨林</span>
+                                    <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">🧒 3-12岁推荐</span>
+                                    <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">28条知识</span>
+                                </div>
+                                <div class="text-xs text-slate-500 mt-3">最佳季节：3月-5月 · 温暖湿润</div>
+                                <div class="flex items-center gap-2 mt-4">
+                                    <button class="flex-1 py-1.5 text-xs bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition">查看知识</button>
+                                    <button class="flex-1 py-1.5 text-xs bg-primary text-white rounded-md hover:bg-primary/90 transition">开始规划</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 青岛 -->
+                        <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover transition-shadow overflow-hidden cursor-pointer border border-transparent hover:border-primary/20">
+                            <div class="h-2 bg-primary"></div>
+                            <div class="p-5">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <span class="text-3xl">🏖️</span>
+                                        <h3 class="text-lg font-semibold text-slate-800 mt-1">青岛</h3>
+                                        <span class="text-xs text-slate-400">Qingdao</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-slate-500">亲子指数</div>
+                                        <div class="text-xl font-bold text-accent">8.6</div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap gap-1.5 mt-3">
+                                    <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">🌊 海滨</span>
+                                    <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">🧒 全年龄段</span>
+                                    <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">15条知识</span>
+                                </div>
+                                <div class="text-xs text-slate-500 mt-3">最佳季节：5月-10月 · 避暑胜地</div>
+                                <div class="flex items-center gap-2 mt-4">
+                                    <button class="flex-1 py-1.5 text-xs bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition">查看知识</button>
+                                    <button class="flex-1 py-1.5 text-xs bg-primary text-white rounded-md hover:bg-primary/90 transition">开始规划</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 桂林 -->
+                        <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover transition-shadow overflow-hidden cursor-pointer border border-transparent hover:border-primary/20">
+                            <div class="h-2 bg-accent"></div>
+                            <div class="p-5">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <span class="text-3xl">🏔️</span>
+                                        <h3 class="text-lg font-semibold text-slate-800 mt-1">桂林</h3>
+                                        <span class="text-xs text-slate-400">Guilin</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-xs text-slate-500">亲子指数</div>
+                                        <div class="text-xl font-bold text-accent">8.3</div>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap gap-1.5 mt-3">
+                                    <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">🚢 漓江竹筏</span>
+                                    <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">🧒 3-12岁推荐</span>
+                                    <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">20条知识</span>
+                                </div>
+                                <div class="text-xs text-slate-500 mt-3">最佳季节：春秋季 · 山水甲天下</div>
+                                <div class="flex items-center gap-2 mt-4">
+                                    <button class="flex-1 py-1.5 text-xs bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition">查看知识</button>
+                                    <button class="flex-1 py-1.5 text-xs bg-primary text-white rounded-md hover:bg-primary/90 transition">开始规划</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== 页面4：我的行程 ===================== -->
+        <div id="page-itineraries" class="page-content w-full flex overflow-hidden hidden">
+
+            <div class="w-full flex flex-col overflow-hidden">
+                <!-- 顶栏 -->
+                <div class="bg-white border-b border-slate-200 p-4 shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1.5 bg-primary text-white rounded-md text-sm cursor-pointer">全部</span>
+                            <span class="px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-md text-sm cursor-pointer">进行中</span>
+                            <span class="px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-md text-sm cursor-pointer">已完成</span>
+                            <span class="px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-md text-sm cursor-pointer">⭐ 收藏</span>
+                        </div>
+                        <button class="flex items-center gap-1 px-4 py-2 bg-primary text-white rounded-md text-sm hover:bg-primary/90 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            新建行程
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 行程列表 -->
+                <div class="flex-1 overflow-y-auto scrollbar-thin p-4 md:p-6 bg-bg-base">
+                    <div class="max-w-4xl mx-auto space-y-4">
+
+                        <!-- 行程卡片 1：三亚 -->
+                        <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover transition-shadow overflow-hidden border-l-4 border-l-primary">
+                            <div class="p-5 flex items-start justify-between gap-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="font-semibold text-slate-800">三亚5天4晚亲子游</h3>
+                                        <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">进行中</span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-2 mt-2 text-sm text-slate-500">
+                                        <span>🏝️ 海南三亚</span>
+                                        <span>·</span>
+                                        <span>📅 08.01 - 08.05</span>
+                                        <span>·</span>
+                                        <span>👨‍👩‍👦 2大1小</span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-3 mt-3 text-sm">
+                                        <span>预算：<span class="font-medium text-accent">¥ 8,650</span></span>
+                                        <span class="text-slate-300">|</span>
+                                        <span>节奏：轻松</span>
+                                        <span class="text-slate-300">|</span>
+                                        <span class="text-success">亲子友好度 9.2</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button class="px-3 py-1.5 text-xs border border-slate-200 text-slate-600 rounded-md hover:bg-slate-50 transition">编辑</button>
+                                    <button class="px-3 py-1.5 text-xs border border-slate-200 text-slate-600 rounded-md hover:bg-slate-50 transition">导出</button>
+                                    <button class="p-1.5 text-slate-400 hover:text-slate-600">⋮</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 行程卡片 2：上海迪士尼 -->
+                        <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover transition-shadow overflow-hidden border-l-4 border-l-success">
+                            <div class="p-5 flex items-start justify-between gap-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="font-semibold text-slate-800">上海迪士尼2日游</h3>
+                                        <span class="text-xs bg-success/10 text-success px-2 py-0.5 rounded">已完成</span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-2 mt-2 text-sm text-slate-500">
+                                        <span>🎡 上海</span>
+                                        <span>·</span>
+                                        <span>📅 05.10 - 05.11</span>
+                                        <span>·</span>
+                                        <span>👨‍👩‍👦 2大1小</span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-3 mt-3 text-sm">
+                                        <span>预算：<span class="font-medium text-accent">¥ 4,200</span></span>
+                                        <span class="text-slate-300">|</span>
+                                        <span>节奏：紧凑</span>
+                                        <span class="text-slate-300">|</span>
+                                        <span class="text-success">亲子友好度 8.5</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button class="px-3 py-1.5 text-xs border border-slate-200 text-slate-600 rounded-md hover:bg-slate-50 transition">编辑</button>
+                                    <button class="px-3 py-1.5 text-xs border border-slate-200 text-slate-600 rounded-md hover:bg-slate-50 transition">导出</button>
+                                    <button class="p-1.5 text-slate-400 hover:text-slate-600">⋮</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 行程卡片 3：成都 -->
+                        <div class="bg-white rounded-xl shadow-card hover:shadow-card-hover transition-shadow overflow-hidden border-l-4 border-l-accent">
+                            <div class="p-5 flex items-start justify-between gap-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="font-semibold text-slate-800">成都亲子慢旅行</h3>
+                                        <span class="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded">⭐ 收藏</span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-2 mt-2 text-sm text-slate-500">
+                                        <span>🐼 四川成都</span>
+                                        <span>·</span>
+                                        <span>📅 计划中</span>
+                                        <span>·</span>
+                                        <span>👫 2大</span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-3 mt-3 text-sm">
+                                        <span>预算：待定</span>
+                                        <span class="text-slate-300">|</span>
+                                        <span>节奏：轻松</span>
+                                        <span class="text-slate-300">|</span>
+                                        <span class="text-success">亲子友好度 8.8</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button class="px-3 py-1.5 text-xs border border-slate-200 text-slate-600 rounded-md hover:bg-slate-50 transition">编辑</button>
+                                    <button class="px-3 py-1.5 text-xs border border-slate-200 text-slate-600 rounded-md hover:bg-slate-50 transition">导出</button>
+                                    <button class="p-1.5 text-slate-400 hover:text-slate-600">⋮</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ========== 方案对比弹窗（可选项） ========== -->
+    <div id="compareModal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+        <div class="fixed inset-0 bg-black/40" onclick="closeCompare()"></div>
+        <div class="relative bg-white rounded-xl shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between p-5 border-b border-slate-100 sticky top-0 bg-white z-10">
+                <h2 class="text-lg font-semibold text-slate-800">选择出行方案 · 苏州→三亚</h2>
+                <button class="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded" onclick="closeCompare()">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- ====== 上海方案 ====== -->
+                <div class="border border-primary/30 rounded-xl p-4 bg-primary/5 relative route-card" data-route="shanghai">
+                    <span class="absolute top-3 right-3 text-xs bg-primary text-white px-2 py-0.5 rounded">⭐ 推荐</span>
+                    <h3 class="font-semibold text-slate-800 mb-1">上海虹桥出发</h3>
+                    <p class="text-xs text-slate-500 mb-3">高铁36分钟到虹桥 · 航班选择多</p>
+
+                    <label class="text-xs font-medium text-slate-600 mb-1.5 block">🚄 高铁选择</label>
+                    <div class="space-y-1 mb-4">
+                        <label class="flex items-center gap-2 p-2 rounded-md hover:bg-white cursor-pointer text-sm train-option" data-route="shanghai" data-idx="0">
+                            <input type="radio" name="shanghaiTrain" value="0" checked class="accent-primary">
+                            <span>G1234 <span class="text-slate-500">08:00-08:36 · 36min</span></span>
+                            <span class="ml-auto text-xs text-slate-400">¥40/成人</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 rounded-md hover:bg-white cursor-pointer text-sm train-option" data-route="shanghai" data-idx="1">
+                            <input type="radio" name="shanghaiTrain" value="1" class="accent-primary">
+                            <span>G1236 <span class="text-slate-500">07:30-08:06 · 36min</span></span>
+                            <span class="ml-auto text-xs text-slate-400">¥40/成人</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 rounded-md hover:bg-white cursor-pointer text-sm train-option" data-route="shanghai" data-idx="2">
+                            <input type="radio" name="shanghaiTrain" value="2" class="accent-primary">
+                            <span>G1242 <span class="text-slate-500">08:15-08:55 · 40min</span></span>
+                            <span class="ml-auto text-xs text-slate-400">¥35/成人</span>
+                        </label>
+                    </div>
+
+                    <label class="text-xs font-medium text-slate-600 mb-1.5 block">✈️ 航班选择</label>
+                    <div class="space-y-1 mb-3">
+                        <label class="flex items-center gap-2 p-2 rounded-md hover:bg-white cursor-pointer text-sm flight-option" data-route="shanghai" data-idx="0">
+                            <input type="radio" name="shanghaiFlight" value="0" checked class="accent-primary">
+                            <span>HU7321 <span class="text-slate-500">10:30-13:40</span></span>
+                            <span class="ml-auto text-xs text-slate-500">¥580/人</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 rounded-md hover:bg-white cursor-pointer text-sm flight-option" data-route="shanghai" data-idx="1">
+                            <input type="radio" name="shanghaiFlight" value="1" class="accent-primary">
+                            <span>CZ6712 <span class="text-slate-500">09:00-12:10</span></span>
+                            <span class="ml-auto text-xs text-slate-500">¥620/人</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 rounded-md hover:bg-white cursor-pointer text-sm flight-option" data-route="shanghai" data-idx="2">
+                            <input type="radio" name="shanghaiFlight" value="2" class="accent-primary">
+                            <span>MU9381 <span class="text-slate-500">11:20-14:30</span></span>
+                            <span class="ml-auto text-xs text-slate-500">¥550/人</span>
+                        </label>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-3 mt-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-500">三人交通合计</span>
+                            <span class="text-xl font-bold text-accent" id="shanghaiTotal">¥ 1,530</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ====== 无锡方案 ====== -->
+                <div class="border border-slate-200 rounded-xl p-4 route-card" data-route="wuxi">
+                    <h3 class="font-semibold text-slate-800 mb-1">无锡硕放出发</h3>
+                    <p class="text-xs text-slate-500 mb-3">高铁24分钟到硕放 · 航班较少</p>
+
+                    <label class="text-xs font-medium text-slate-600 mb-1.5 block">🚄 高铁选择</label>
+                    <div class="space-y-1 mb-4">
+                        <label class="flex items-center gap-2 p-2 rounded-md hover:bg-white cursor-pointer text-sm train-option" data-route="wuxi" data-idx="0">
+                            <input type="radio" name="wuxiTrain" value="0" checked class="accent-primary">
+                            <span>G1238 <span class="text-slate-500">08:30-08:54 · 24min</span></span>
+                            <span class="ml-auto text-xs text-slate-400">¥30/成人</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 rounded-md hover:bg-white cursor-pointer text-sm train-option" data-route="wuxi" data-idx="1">
+                            <input type="radio" name="wuxiTrain" value="1" class="accent-primary">
+                            <span>G1240 <span class="text-slate-500">09:00-09:24 · 24min</span></span>
+                            <span class="ml-auto text-xs text-slate-400">¥30/成人</span>
+                        </label>
+                    </div>
+
+                    <label class="text-xs font-medium text-slate-600 mb-1.5 block">✈️ 航班选择</label>
+                    <div class="space-y-1 mb-3">
+                        <label class="flex items-center gap-2 p-2 rounded-md hover:bg-white cursor-pointer text-sm flight-option" data-route="wuxi" data-idx="0">
+                            <input type="radio" name="wuxiFlight" value="0" checked class="accent-primary">
+                            <span>ZH8502 <span class="text-slate-500">10:00-13:00</span></span>
+                            <span class="ml-auto text-xs text-slate-500">¥520/人</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 rounded-md hover:bg-white cursor-pointer text-sm flight-option" data-route="wuxi" data-idx="1">
+                            <input type="radio" name="wuxiFlight" value="1" class="accent-primary">
+                            <span>MU2813 <span class="text-slate-500">11:30-14:25</span></span>
+                            <span class="ml-auto text-xs text-slate-500">¥490/人</span>
+                        </label>
+                    </div>
+                    <div class="text-xs text-amber-600 mb-2">⚠️ 航班班次较少，每日仅1-2班</div>
+
+                    <div class="bg-white rounded-lg p-3 mt-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs text-slate-500">三人交通合计</span>
+                            <span class="text-xl font-bold text-slate-700" id="wuxiTotal">¥ 1,340</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-100 p-4 flex items-center justify-between bg-slate-50 rounded-b-xl">
+                <div class="text-sm text-slate-500">
+                    已选：<strong id="selectedRouteLabel">上海方案</strong>
+                    · 合计 <strong id="selectedTotalLabel" class="text-accent">¥ 1,530</strong>
+                </div>
+                <div class="flex gap-3">
+                    <button class="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-md hover:bg-white" onclick="closeCompare()">取消</button>
+                    <button class="px-4 py-2 text-sm bg-primary text-white rounded-md hover:bg-primary/90" onclick="applyRoute()">✅ 应用此方案</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 登录 ==========
+        function doLogin(phone, nickname) {
+            document.getElementById('page-login').classList.add('hidden')
+            document.getElementById('page-plan').classList.remove('hidden')
+            // 更新导航栏用户信息
+            var userAvatar = document.querySelector('header .rounded-full')
+            var userName = document.querySelector('header .hidden.md\\:block')
+            if (userAvatar && userAvatar.nextElementSibling) {
+                userAvatar.innerHTML = '<span class="w-full h-full flex items-center justify-center bg-primary text-white text-xs font-medium">' + nickname.charAt(0) + '</span>'
+            }
+            if (userName) userName.textContent = nickname
+            // 更新头像旁边的手机号显示
+            var avatarContainer = document.querySelector('header .flex.items-center.gap-2 .text-sm')
+            // 不需要额外操作，已经改了 userName
+        }
+        function fillUser() {
+            document.getElementById('loginPhone').value = '13800138000'
+            document.getElementById('loginCode').value = '123456'
+            document.getElementById('loginBtn').click()
+        }
+        function fillAdmin() {
+            document.getElementById('loginPhone').value = '13900139000'
+            document.getElementById('loginCode').value = 'admin666'
+            document.getElementById('loginBtn').click()
+        }
+        document.getElementById('loginBtn').addEventListener('click', function() {
+            var phone = document.getElementById('loginPhone').value.trim()
+            if (!phone) { alert('请输入手机号'); return }
+            var nickname = phone === '13900139000' ? '运营管理员' : '亲子家庭'
+            doLogin(phone, nickname)
+        })
+        // 回车登录
+        document.getElementById('loginCode').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') document.getElementById('loginBtn').click()
+        })
+
+        // ========== 页面切换 ==========
+        document.querySelectorAll('.nav-item').forEach(function(el) {
+            el.addEventListener('click', function(e) {
+                e.preventDefault()
+                var page = this.getAttribute('data-page')
+                if (!page) return
+                document.querySelectorAll('.page-content').forEach(function(p) { p.classList.add('hidden') })
+                document.getElementById('page-' + page).classList.remove('hidden')
+                document.querySelectorAll('.nav-item').forEach(function(n) { n.className = n.className.replace(/(nav-active|text-primary|font-medium|border-b-2|border-primary)/g, '').trim() + ' text-slate-600 hover:text-slate-900 h-16 flex items-center' })
+                this.className = 'nav-item nav-active'
+                // 移动端关闭侧边栏
+                closeSidebar()
+            })
+        })
+
+        // ========== 侧边栏（移动端） ==========
+        function openSidebar() {
+            document.getElementById('sidebar').classList.remove('-translate-x-full')
+            document.getElementById('sidebarOverlay').classList.remove('hidden')
+        }
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.add('-translate-x-full')
+            document.getElementById('sidebarOverlay').classList.add('hidden')
+        }
+        document.getElementById('menuToggle').addEventListener('click', openSidebar)
+        document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar)
+
+        // ========== 聊天面板（移动端） ==========
+        function openChat() {
+            document.getElementById('chatPanel').classList.remove('translate-x-full')
+            document.getElementById('chatOverlay').classList.remove('hidden')
+        }
+        function closeChat() {
+            document.getElementById('chatPanel').classList.add('translate-x-full')
+            document.getElementById('chatOverlay').classList.add('hidden')
+        }
+        document.getElementById('chatToggle').addEventListener('click', openChat)
+        document.getElementById('closeChat').addEventListener('click', closeChat)
+        document.getElementById('chatOverlay').addEventListener('click', closeChat)
+
+        // ========== 方案对比弹窗（可选票） ==========
+        function openCompare() { document.getElementById('compareModal').classList.remove('hidden') }
+        function closeCompare() { document.getElementById('compareModal').classList.add('hidden') }
+
+        // 路线数据
+        var routeData = {
+            shanghai: {
+                label: '上海方案',
+                title: '上海虹桥',
+                trains: [
+                    { name: 'G1234', time: '08:00-08:36', dur: '36分钟', adultPrice: 40, childFree: true },
+                    { name: 'G1236', time: '07:30-08:06', dur: '36分钟', adultPrice: 40, childFree: true },
+                    { name: 'G1242', time: '08:15-08:55', dur: '40分钟', adultPrice: 35, childFree: true },
+                ],
+                flights: [
+                    { name: 'HU7321', time: '10:30-13:40', dur: '3h10min', price: 580, childDiscount: 0.5 },
+                    { name: 'CZ6712', time: '09:00-12:10', dur: '3h10min', price: 620, childDiscount: 0.5 },
+                    { name: 'MU9381', time: '11:20-14:30', dur: '3h10min', price: 550, childDiscount: 0.5 },
+                ],
+            },
+            wuxi: {
+                label: '无锡方案',
+                title: '无锡硕放',
+                trains: [
+                    { name: 'G1238', time: '08:30-08:54', dur: '24分钟', adultPrice: 30, childFree: true },
+                    { name: 'G1240', time: '09:00-09:24', dur: '24分钟', adultPrice: 30, childFree: true },
+                ],
+                flights: [
+                    { name: 'ZH8502', time: '10:00-13:00', dur: '3h', price: 520, childDiscount: 0.5 },
+                    { name: 'MU2813', time: '11:30-14:25', dur: '2h55min', price: 490, childDiscount: 0.5 },
+                ],
+            },
+        }
+
+        function calcTotal(routeKey) {
+            var route = routeData[routeKey]
+            var trainEls = document.querySelectorAll('input[name="' + routeKey + 'Train"]')
+            var flightEls = document.querySelectorAll('input[name="' + routeKey + 'Flight"]')
+            var trainIdx = 0, flightIdx = 0
+            trainEls.forEach(function(el, i) { if (el.checked) trainIdx = i })
+            flightEls.forEach(function(el, i) { if (el.checked) flightIdx = i })
+            var train = route.trains[trainIdx]
+            var flight = route.flights[flightIdx]
+            var trainTotal = train.adultPrice * 2 + (train.childFree ? 0 : train.adultPrice)
+            var flightAdult = flight.price * 2
+            var flightChild = flight.childDiscount ? Math.round(flight.price * flight.childDiscount) : flight.price
+            var flightTotal = flightAdult + flightChild
+            return { train: train, flight: flight, trainTotal: trainTotal, flightTotal: flightTotal, total: trainTotal + flightTotal }
+        }
+
+        function updateTotal(routeKey) {
+            var result = calcTotal(routeKey)
+            document.getElementById(routeKey + 'Total').textContent = '¥ ' + result.total.toLocaleString()
+            // 更新底部标注
+            var otherKey = routeKey === 'shanghai' ? 'wuxi' : 'shanghai'
+            var resultOther = calcTotal(otherKey)
+            document.getElementById('selectedRouteLabel').textContent = routeData[routeKey].label
+            document.getElementById('selectedTotalLabel').textContent = '¥ ' + result.total.toLocaleString()
+        }
+
+        // radio change 事件
+        document.querySelectorAll('#compareModal input[type="radio"]').forEach(function(el) {
+            el.addEventListener('change', function() {
+                if (this.name.indexOf('shanghai') === 0) {
+                    updateTotal('shanghai')
+                } else {
+                    updateTotal('wuxi')
+                }
+            })
+        })
+
+        // 点击卡片切换推荐方案
+        document.querySelectorAll('.route-card').forEach(function(card) {
+            card.addEventListener('click', function(e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') return
+                document.querySelectorAll('.route-card').forEach(function(c) {
+                    c.className = c.className.replace(/border-primary\/30 bg-primary\/5/g, 'border-slate-200').trim()
+                    c.classList.remove('bg-primary/5')
+                })
+                this.classList.add('bg-primary/5')
+                this.className = this.className.replace('border-slate-200', 'border-primary/30')
+                var routeKey = this.getAttribute('data-route')
+                updateTotal(routeKey)
+            })
+        })
+
+        function switchToKnowledge() {
+            document.querySelectorAll('.page-content').forEach(function(p) { p.classList.add('hidden') })
+            document.getElementById('page-knowledge').classList.remove('hidden')
+            document.querySelectorAll('.nav-item').forEach(function(n) { n.className = n.className.replace(/(nav-active|text-primary|font-medium|border-b-2|border-primary)/g, '').trim() + ' text-slate-600 hover:text-slate-900 h-16 flex items-center' })
+            document.querySelector('.nav-item[data-page="knowledge"]').className = 'nav-item nav-active'
+        }
+        function applyRoute() {
+            // 确定选中的方案（比较哪个合计更便宜，或手动选择方案卡片的 active 状态）
+            var shTotal = calcTotal('shanghai').total
+            var wxTotal = calcTotal('wuxi').total
+            var routeKey = shTotal <= wxTotal ? 'shanghai' : 'wuxi'
+            // 检查用户点击的推荐方案卡片
+            var activeCard = document.querySelector('.route-card.border-primary\\/30')
+            if (activeCard) routeKey = activeCard.getAttribute('data-route')
+
+            var result = calcTotal(routeKey)
+            var route = routeData[routeKey]
+            var day0 = document.querySelector('#page-plan .timeline-line')
+            if (!day0) return
+
+            // 更新 Day 0 卡片标题
+            var day0Title = day0.closest('.bg-white').querySelector('h3')
+            var day0Sub = day0.closest('.bg-white').querySelector('.text-xs.text-slate-500')
+            if (day0Title) day0Title.innerHTML = '🚀 出发日 · 苏州→三亚 <span class="text-xs text-slate-400 font-normal ml-2">已选：' + route.label + '</span>'
+            if (day0Sub) day0Sub.textContent = '已选 ' + route.title + ' · 总费用 ¥' + result.total.toLocaleString()
+
+            // 更新高铁节点
+            var trainNode = day0.parentElement.querySelector('.relative.pl-10')
+            if (trainNode) {
+                var timeEl = trainNode.querySelector('.text-sm.text-slate-500')
+                var nameEl = trainNode.querySelector('h4')
+                var priceEl = trainNode.querySelector('.text-sm.text-slate-500.mt-2')
+                if (timeEl) timeEl.textContent = result.train.time
+                if (nameEl) nameEl.textContent = '苏州站 → ' + route.title + '站 · 高铁 ' + result.train.name
+                if (priceEl) priceEl.innerHTML = '成人¥' + result.train.adultPrice + '×2 + 儿童免票 = <span class="font-medium text-accent">¥ ' + result.trainTotal.toLocaleString() + '</span>'
+            }
+
+            // 更新航班节点
+            var flightNode = trainNode ? trainNode.nextElementSibling : null
+            if (flightNode && flightNode.querySelector('.timeline-emoji')) {
+                var fTimeEl = flightNode.querySelector('.text-sm.text-slate-500')
+                var fNameEl = flightNode.querySelector('h4')
+                var fPriceEl = flightNode.querySelector('.text-sm.text-slate-500.mt-2')
+                var childRate = result.flight.childDiscount ? '（5折）' : ''
+                if (fTimeEl) fTimeEl.textContent = result.flight.time
+                if (fNameEl) fNameEl.textContent = route.title + ' → 三亚凤凰 · 航班 ' + result.flight.name
+                if (fPriceEl) fPriceEl.innerHTML = '成人¥' + result.flight.price + '×2 + 儿童¥' + Math.round(result.flight.price * (result.flight.childDiscount || 1)) + childRate + ' = <span class="font-medium text-accent">¥ ' + result.flightTotal.toLocaleString() + '</span>'
+            }
+
+            closeCompare()
+        }
+
+        // ========== 侧边栏"方案对比"按钮 ==========
+        var compareBtn = document.querySelector('#sidebar button:first-child')
+        if (compareBtn) compareBtn.addEventListener('click', openCompare)
+
+        // ========== 知识卡片收藏 ==========
+        document.querySelectorAll('.knowledge-card .shrink-0 button, .knowledge-detail .shrink-0 button').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation()
+                var isFav = this.getAttribute('data-favorited') === 'true'
+                this.setAttribute('data-favorited', String(!isFav))
+                this.classList.toggle('text-accent')
+                this.classList.toggle('text-slate-400')
+            })
+        })
+
+        // ========== 知识卡片点击展开详情（非 xl 屏幕） ==========
+        document.querySelectorAll('.knowledge-card').forEach(function(card) {
+            card.addEventListener('click', function() {
+                if (window.innerWidth >= 1280) return
+                // 切换激活态
+                document.querySelectorAll('.knowledge-card').forEach(function(c) { c.classList.remove('active') })
+                this.classList.add('active')
+                // 这里可以添加详情替换列表的逻辑
+            })
+        })
+
+        // ========== 知识库分类切换 ==========
+        document.querySelectorAll('.category-item').forEach(function(item) {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.category-item').forEach(function(c) { c.classList.remove('active') })
+                this.classList.add('active')
+            })
+        })
+
+        // ========== 发送消息 ==========
+        document.getElementById('sendBtn').addEventListener('click', function() {
+            var input = document.getElementById('messageInput')
+            if (!input.value.trim()) return
+            // 添加用户消息
+            var msgDiv = document.createElement('div')
+            msgDiv.className = 'flex gap-2 justify-end'
+            msgDiv.innerHTML = '<div class="bg-primary text-white rounded-lg rounded-tr-none p-3 text-sm max-w-[85%]"><p>' + input.value + '</p></div>'
+            document.getElementById('chatMessages').appendChild(msgDiv)
+            input.value = ''
+            // 模拟 AI 回复
+            setTimeout(function() {
+                var aiDiv = document.createElement('div')
+                aiDiv.className = 'flex gap-2'
+                aiDiv.innerHTML = '<div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0 mt-0.5"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg></div><div class="bg-slate-50 rounded-lg rounded-tl-none p-3 text-sm max-w-[85%]"><p>好的，已收到你的需求，正在调整行程～</p><div class="mt-2 text-xs text-slate-400">模拟回复 · 实际由 AI Agent 生成</div></div>'
+                document.getElementById('chatMessages').appendChild(aiDiv)
+                document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight
+            }, 800)
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight
+        })
+
+        // Enter 发送
+        document.getElementById('messageInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                document.getElementById('sendBtn').click()
+            }
+        })
+
+        // ========== 快捷指令 ==========
+        document.querySelectorAll('.quick-cmd').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.getElementById('messageInput').value = this.textContent.trim()
+                document.getElementById('sendBtn').click()
+            })
+        })
+
+        // ========== 知识标签点击跳转 ==========
+        document.querySelectorAll('.knowledge-tag').forEach(function(tag) {
+            tag.addEventListener('click', function() {
+                // 切换到知识库页面
+                document.querySelectorAll('.page-content').forEach(function(p) { p.classList.add('hidden') })
+                document.getElementById('page-knowledge').classList.remove('hidden')
+                document.querySelectorAll('.nav-item').forEach(function(n) { n.className = n.className.replace(/(nav-active|text-primary|font-medium|border-b-2|border-primary)/g, '').trim() + ' text-slate-600 hover:text-slate-900 h-16 flex items-center' })
+                document.querySelector('.nav-item[data-page="knowledge"]').className = 'nav-item nav-active'
+            })
+        })
+
+        // ========== 目的地库筛选 ==========
+        document.querySelectorAll('#page-destinations .category-item').forEach(function(item) {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('#page-destinations .category-item').forEach(function(c) { c.classList.remove('active') })
+                this.classList.add('active')
+            })
+        })
+
+        // ========== 目的地库「查看知识」跳转 ==========
+        document.querySelectorAll('#page-destinations .bg-primary\\/10').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation()
+                switchToKnowledge()
+            })
+        })
+
+        // ========== 我的行程筛选 ==========
+        document.querySelectorAll('#page-itineraries .border-b .cursor-pointer').forEach(function(item) {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('#page-itineraries .border-b .cursor-pointer').forEach(function(c) {
+                    c.className = c.className.replace(/bg-primary text-white/g, '').trim() + ' px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-md text-sm cursor-pointer'
+                })
+                this.className = 'px-3 py-1.5 bg-primary text-white rounded-md text-sm cursor-pointer'
+            })
+        })
+        var initialMsg = document.querySelector('#chatMessages .flex:first-child')
+        // 保持现有聊天消息
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String      @id @default(uuid())
+  phone       String      @unique
+  nickname    String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  itineraries Itinerary[]
+}
+
+model Itinerary {
+  id              String   @id @default(uuid())
+  userId          String
+  title           String
+  destination     String
+  startDate       DateTime?
+  endDate         DateTime?
+  adults          Int      @default(2)
+  children        Int      @default(1)
+  childAge        Int?
+  pace            String?
+  budget          Float?
+  kidFriendly     Float?
+  status          String   @default("draft")
+  itineraryJson   Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Knowledge {
+  id          String   @id @default(uuid())
+  title       String
+  summary     String
+  category    String
+  subCategory String?
+  ageRange    String?
+  content     String
+  tags        String[]
+  views       Int      @default(0)
+  embedding   Unsupported("vector(1536)")?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Destination {
+  id             String   @id @default(uuid())
+  name           String
+  englishName    String?
+  emoji          String
+  region         String
+  bestSeason     String
+  kidFriendly    Float
+  tags           String[]
+  seasonTags     String[]
+  ageRange       String
+  knowledgeCount Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

@@ -1,0 +1,23 @@
+{
+  "skill_name": "trip-task-decomposer",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "读一下 docs/PRD.md，帮我分解这个项目的任务，从基础设施开始到 MVP 核心功能完成，输出到 docs/plans/ 下",
+      "expected_output": "生成 docs/plans/ 下的完整任务分解文档，包含 Phase 0~3 的模块划分、依赖图、每个任务含文件路径和验收标准引用",
+      "files": ["docs/PRD.md"]
+    },
+    {
+      "id": 2,
+      "prompt": "项目要加一个「出行清单」功能，用户在行程确定后可以一键生成行李、证件、药品等 checklist。帮我拆一下这个功能需要的任务",
+      "expected_output": "输出该功能的独立任务分解，包含数据库扩展、后端 API、前端页面、以及与现有 Trip 模块的集成点",
+      "files": ["docs/PRD.md"]
+    },
+    {
+      "id": 3,
+      "prompt": "我要开始写 Auth 模块的代码了，帮我看看 PRD 里对登录的需求，拆出这个模块需要的所有任务（包括前端和后端）",
+      "expected_output": "输出 Auth 模块的完整任务分解，包含后端 JWT+验证码、前端登录页、测试任务，引用 US-1",
+      "files": ["docs/PRD.md"]
+    }
+  ]
+}
