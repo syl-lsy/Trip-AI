@@ -71,6 +71,39 @@ Last updated: 2026-07-09
 
 ## Auto Memory（AI 自动记录）
 
+- 2026-07-12 | decision | itecture] Phase 2 智能规划工作台全栈实现完成：三栏布局（PlanView fixed定位突破父容器）+ AI对话面板（ChatPanel SSE流式+ProgressSkeleton+QuickActions+KnowledgeRefCard）+ 行程可视化（TimelineCenter/DayCard/TimelineNode 节点渲染+彩色边框+Emoji图标）+ 方案对比弹窗（PlanComparison Teleport弹窗，两方案卡片）+ Itinerary CRUD（5个REST端点，按userId隔离）+ AI SSE 端点（POST /api/ai/chat/plan/modify，@Sse()+Observable，动态import @trip/ai）+ AI Agent层（IntentRouter LLM+关键词降级、TravelPlanner 顺序编排+SSE进度、TravelModifier全量重生成、KnowledgeQA桩）+ MCP工具（TransportTool/AccommodationTool/AmapTool/KnowledgeTool预设示例数据）。详见 docs/features/planning-workbench.md
+
+- 2026-07-12 | architecture | Phase 2 智能规划工作台全栈实现完成：三栏布局（PlanView fixed定位突破父容器）+ AI对话面板（ChatPanel SSE流式+ProgressSkeleton+QuickActions+KnowledgeRefCard）+ 行程可视化（TimelineCenter/DayCard/TimelineNode 节点渲染+彩色边框+Emoji图标）+ 方案对比弹窗（PlanComparison Teleport弹窗，两方案卡片）+ Itinerary CRUD（5个REST端点，按userId隔离）+ AI SSE 端点（POST /api/ai/chat/plan/modify，@Sse()+Observable，动态import @trip/ai）+ AI Agent层（IntentRouter LLM+关键词降级、TravelPlanner 顺序编排+SSE进度、TravelModifier全量重生成、KnowledgeQA桩）+ MCP工具（TransportTool/AccommodationTool/AmapTool/KnowledgeTool预设示例数据）。详见 docs/features/planning-workbench.md
+
+- 2026-07-12 | decision | itecture] Phase 2 Slice 5 方案对比弹窗完成：新建 PlanComparison.vue（Teleport 弹窗，两方案卡片含高铁/航班 radio 选择、合计费用计算、推荐标签，emit close/apply）；修改 OutlineSidebar.vue（启用方案对比按钮，集成 PlanComparison 组件）
+
+- 2026-07-12 | architecture | Phase 2 Slice 5 方案对比弹窗完成：新建 PlanComparison.vue（Teleport 弹窗，两方案卡片含高铁/航班 radio 选择、合计费用计算、推荐标签，emit close/apply）；修改 OutlineSidebar.vue（启用方案对比按钮，集成 PlanComparison 组件）
+
+- 2026-07-12 | decision | itecture] Phase 2 Slice 4 前端 QuickActions + KnowledgeRefCard + 修改请求连接完成：新建 QuickActions.vue（4个快捷按钮：放慢节奏/更换酒店/压缩预算/增加美食，hasPlan控制前两个disabled状态）和 KnowledgeRefCard.vue（蓝色知识引用卡片，点击跳转/knowledge/{id}）；修改 api/plan.ts 新增 subscribeModify（SSE流式调用/ai/modify端点，使用ROUTES.AI.MODIFY常量）；修改 stores/plan.ts 新增 modifyPlan 方法（调用subscribeModify，处理progress/plan/message/error事件）；修改 ChatPanel.vue（快速标签替换为QuickActions组件，handleQuickAction按hasPlan区分走modifyPlan或startGeneration，AI消息气泡中渲染KnowledgeRefCard）。
+
+- 2026-07-12 | architecture | Phase 2 Slice 4 前端 QuickActions + KnowledgeRefCard + 修改请求连接完成：新建 QuickActions.vue（4个快捷按钮：放慢节奏/更换酒店/压缩预算/增加美食，hasPlan控制前两个disabled状态）和 KnowledgeRefCard.vue（蓝色知识引用卡片，点击跳转/knowledge/{id}）；修改 api/plan.ts 新增 subscribeModify（SSE流式调用/ai/modify端点，使用ROUTES.AI.MODIFY常量）；修改 stores/plan.ts 新增 modifyPlan 方法（调用subscribeModify，处理progress/plan/message/error事件）；修改 ChatPanel.vue（快速标签替换为QuickActions组件，handleQuickAction按hasPlan区分走modifyPlan或startGeneration，AI消息气泡中渲染KnowledgeRefCard）。
+
+- 2026-07-12 | decision | itecture] Phase 2 Slice 3 行程可视化渲染完成：新建 TimelineNode.vue（节点渲染：虚线连接线、Emoji图标、时间/标题/费用、知识标签）+ DayCard.vue（左侧4px彩色边框按节点类型着色、天数头部+节奏描述、节点列表）；修改 TimelineCenter.vue（总览条含标题/亲子度评分/预算、图例行、导出PDF按钮、DayCard可滚动列表，保留空状态）；修改 OutlineSidebar.vue（行程标题+成员信息、按天导航列表高亮选中日、底部工具按钮方案对比/导出行程/出行清单，保留空状态）。响应式：Sidebar 桌面显示/移动端 hidden。
+
+- 2026-07-12 | architecture | Phase 2 Slice 3 行程可视化渲染完成：新建 TimelineNode.vue（节点渲染：虚线连接线、Emoji图标、时间/标题/费用、知识标签）+ DayCard.vue（左侧4px彩色边框按节点类型着色、天数头部+节奏描述、节点列表）；修改 TimelineCenter.vue（总览条含标题/亲子度评分/预算、图例行、导出PDF按钮、DayCard可滚动列表，保留空状态）；修改 OutlineSidebar.vue（行程标题+成员信息、按天导航列表高亮选中日、底部工具按钮方案对比/导出行程/出行清单，保留空状态）。响应式：Sidebar 桌面显示/移动端 hidden。
+
+- 2026-07-12 | decision | itecture] Phase 2 Itinerary CRUD + AI SSE 端点完成：新建 ItineraryModule (CRUD: GET/POST/PUT/DELETE /api/itineraries, 按 userId 隔离) 和 AiModule (SSE: POST /api/ai/chat, /api/ai/plan, /api/ai/modify, 使用 @Sse() + Observable, 动态 import @trip/ai)。所有端点使用 AuthGuard('jwt') + @CurrentUser()。itinerary.service 使用 Prisma.ItineraryCreateInput/UpdateInput 强类型避免 any。
+
+- 2026-07-12 | architecture | Phase 2 Itinerary CRUD + AI SSE 端点完成：新建 ItineraryModule (CRUD: GET/POST/PUT/DELETE /api/itineraries, 按 userId 隔离) 和 AiModule (SSE: POST /api/ai/chat, /api/ai/plan, /api/ai/modify, 使用 @Sse() + Observable, 动态 import @trip/ai)。所有端点使用 AuthGuard('jwt') + @CurrentUser()。itinerary.service 使用 Prisma.ItineraryCreateInput/UpdateInput 强类型避免 any。
+
+- 2026-07-12 | decision | itecture] Phase 2 Slice 1 进度骨架屏 + SSE 流式订阅完成：新建 ProgressSkeleton.vue 组件（5步进度指示器），修改 api/plan.ts（SSE subscribeChat/subscribePlan 使用原生 fetch+ReadableStream），修改 stores/plan.ts（progressSteps/startGeneration/cancelGeneration/startPlan），修改 ChatPanel.vue 集成进度骨架屏。API 层使用 Record<string,string> headers 解决 Authorization 命名约定问题，SSE_PREFIX_LENGTH 常量避免 magic number。
+
+- 2026-07-12 | architecture | Phase 2 Slice 1 进度骨架屏 + SSE 流式订阅完成：新建 ProgressSkeleton.vue 组件（5步进度指示器），修改 api/plan.ts（SSE subscribeChat/subscribePlan 使用原生 fetch+ReadableStream），修改 stores/plan.ts（progressSteps/startGeneration/cancelGeneration/startPlan），修改 ChatPanel.vue 集成进度骨架屏。API 层使用 Record<string,string> headers 解决 Authorization 命名约定问题，SSE_PREFIX_LENGTH 常量避免 magic number。
+
+- 2026-07-12 | decision | itecture] Phase 2 Slice 1 完成：PlanView 使用 fixed 定位(inset-0 top-14)突破 DefaultLayout 的 max-w-7xl 约束，实现全宽三栏布局。ChatPanel 使用 Pinia store 管理消息状态，API 层引用 ROUTES.AI.CHAT 常量。已添加 ROUTES.AI.CHAT 到共享常量包。
+- 2026-07-12 | decision | itecture] Phase 2 AI Agent 层已实现：ai/ 包创建 14 个文件，包括 IntentRouter（LLM + 关键词降级）、TravelPlanner（顺序编排 + SSE 事件流）、TravelModifier（全量重新生成）、KnowledgeQA（RAG 桩）、以及 Transport/Accommodation/Amap/Knowledge 四个工具类（预设示例数据）。CJS 构建输出到 dist/，供 NestJS 服务端调用。
+
+- 2026-07-12 | architecture | Phase 2 AI Agent 层已实现：ai/ 包创建 14 个文件，包括 IntentRouter（LLM + 关键词降级）、TravelPlanner（顺序编排 + SSE 事件流）、TravelModifier（全量重新生成）、KnowledgeQA（RAG 桩）、以及 Transport/Accommodation/Amap/Knowledge 四个工具类（预设示例数据）。CJS 构建输出到 dist/，供 NestJS 服务端调用。
+
+- 2026-07-12 | architecture | Phase 2 Slice 1 完成：PlanView 使用 fixed 定位(inset-0 top-14)突破 DefaultLayout 的 max-w-7xl 约束，实现全宽三栏布局。ChatPanel 使用 Pinia store 管理消息状态，API 层引用 ROUTES.AI.CHAT 常量。已添加 ROUTES.AI.CHAT 到共享常量包。
+
+- 2026-07-12 | config | superpowers 插件从全局 ~/.config/opencode/opencode.jsonc 移至项目级 .opencode/opencode.json，遵循配置优先级规范（.opencode/ > 项目级 > 全局）
+
 - 2026-07-12 | config | 6个未引入流程的技能已集成到Agent prompts：memory-maintenance→docs-writer，backend-module/prisma-operations/constants-extension→backend-dev，frontend-page/constants-extension→frontend-dev，git-sync→coordinator
 
 - 2026-07-12 | decision | 用户头像上传功能已完成：采用 multipart/form-data 上传到 /api/user/avatar 端点，文件存储到 server/uploads/avatars/ 目录，数据库只存相对路径，前端使用 Pinia store 管理上传状态

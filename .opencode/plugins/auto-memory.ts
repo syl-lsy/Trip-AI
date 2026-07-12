@@ -277,7 +277,7 @@ async function queryContextMode(query: string, maxResults: number): Promise<Sear
     const { execSync } = await import('child_process')
     const result = execSync(
       `opencode run --json --prompt "ctx_search(queries: [${JSON.stringify(query)}], limit: ${maxResults})"`,
-      { encoding: 'utf-8' as const, timeout: 10000 },
+      { encoding: 'utf-8' as const, timeout: 10000, stdio: ['ignore', 'pipe', 'pipe'] },
     )
     const parsed = JSON.parse(result as string)
     return Array.isArray(parsed)
@@ -290,8 +290,22 @@ async function queryContextMode(query: string, maxResults: number): Promise<Sear
           type: '',
         }))
       : []
-  } catch {
-    return []
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    const stderr =
+      err && typeof err === 'object' && 'stderr' in err
+        ? String((err as { stderr: unknown }).stderr)
+        : ''
+    return [
+      {
+        file: 'context-mode error',
+        line: 0,
+        content: `[ctx_search error: ${msg}${stderr ? ' | stderr: ' + stderr : ''}]`,
+        score: 999,
+        description: '',
+        type: 'error',
+      },
+    ]
   }
 }
 
@@ -374,7 +388,7 @@ async function syncMemoryFromDaily(base: string): Promise<void> {
 
 let latestSessionId = ''
 
-export default (async ({ client, directory }) => {
+export const AutoMemoryPlugin: Plugin = async ({ client, directory }) => {
   const base = resolve(directory, MEMORY_ROOT)
 
   async function gcOldFiles(
@@ -710,163 +724,172 @@ export default (async ({ client, directory }) => {
             ),
         },
         async execute(args) {
-          const q = args.query.toLowerCase()
-          const queryTokens = tokenize(q).filter((t) => !isStopword(t))
-          const mode = args.mode || 'semantic'
-          const results: SearchResult[] = []
-          let totalDocs = 0
-          const docsContainingTerm = new Map<string, number>()
+          try {
+            const q = args.query.toLowerCase()
+            const queryTokens = tokenize(q).filter((t) => !isStopword(t))
+            const mode = args.mode || 'semantic'
+            const results: SearchResult[] = []
+            let totalDocs = 0
+            const docsContainingTerm = new Map<string, number>()
 
-          interface DocLine {
-            text: string
-            file: string
-            line: number
-            frontmatter?: string
-          }
-          const allDocs: DocLine[] = []
-
-          const memContent = await readSafe(join(base, INDEX_FILE))
-          const memLines = memContent.split('\n')
-          const memParagraphs = extractParagraphs(memLines)
-          for (const p of memParagraphs) {
-            allDocs.push({ text: p.text, file: INDEX_FILE, line: p.startLine })
-          }
-
-          const dailyDir = join(base, 'daily')
-          if (existsSync(dailyDir)) {
-            const files = await readdir(dailyDir)
-            const recent = files.filter((f: string) => f.endsWith('.md')).slice(-14)
-            for (const file of recent) {
-              const content = await readSafe(join(dailyDir, file))
-              const sectionLines = content.split('\n')
-              const dailyParagraphs = extractParagraphs(sectionLines)
-              for (const p of dailyParagraphs) {
-                allDocs.push({
-                  text: p.text,
-                  file: `daily/${file}`,
-                  line: p.startLine,
-                  frontmatter: content.slice(0, 500),
-                })
-              }
+            interface DocLine {
+              text: string
+              file: string
+              line: number
+              frontmatter?: string
             }
-          }
+            const allDocs: DocLine[] = []
 
-          const topicsDir = join(base, 'topics')
-          if (existsSync(topicsDir)) {
-            const files = await readdir(topicsDir).catch(() => [] as string[])
-            for (const file of files.filter((f: string) => f.endsWith('.md'))) {
-              const content = await readSafe(join(topicsDir, file))
-              const fm = extractFrontmatter(content)
-              const topicLines = content.split('\n')
-              const topicParagraphs = extractParagraphs(topicLines)
-              for (const p of topicParagraphs) {
-                allDocs.push({
-                  text: p.text,
-                  file: `topics/${file}`,
-                  line: p.startLine,
-                  frontmatter:
-                    fm.description || fm.type
-                      ? `desc: "${fm.description}", type: "${fm.type}"`
-                      : undefined,
-                })
-              }
+            const memContent = await readSafe(join(base, INDEX_FILE))
+            const memLines = memContent.split('\n')
+            const memParagraphs = extractParagraphs(memLines)
+            for (const p of memParagraphs) {
+              allDocs.push({ text: p.text, file: INDEX_FILE, line: p.startLine })
             }
-          }
 
-          totalDocs = allDocs.length
-
-          if (mode === 'precise') {
-            for (const doc of allDocs) {
-              if (doc.text.toLowerCase().includes(q)) {
-                results.push({
-                  file: doc.file,
-                  line: doc.line,
-                  content: doc.text.trim(),
-                  score: 1,
-                  description: '',
-                  type: '',
-                  frontmatter: doc.frontmatter,
-                })
+            const dailyDir = join(base, 'daily')
+            if (existsSync(dailyDir)) {
+              let files: string[]
+              try {
+                files = await readdir(dailyDir)
+              } catch {
+                files = []
               }
-            }
-          } else {
-            const allTokens = allDocs.map((d) => tokenize(d.text))
-            for (const tokens of allTokens) {
-              const seen = new Set<string>()
-              for (const t of tokens) {
-                if (!seen.has(t)) {
-                  seen.add(t)
-                  docsContainingTerm.set(t, (docsContainingTerm.get(t) || 0) + 1)
+              const recent = files.filter((f: string) => f.endsWith('.md')).slice(-14)
+              for (const file of recent) {
+                const content = await readSafe(join(dailyDir, file))
+                const sectionLines = content.split('\n')
+                const dailyParagraphs = extractParagraphs(sectionLines)
+                for (const p of dailyParagraphs) {
+                  allDocs.push({
+                    text: p.text,
+                    file: `daily/${file}`,
+                    line: p.startLine,
+                    frontmatter: content.slice(0, 500),
+                  })
                 }
               }
             }
 
-            const avgDocLen =
-              allTokens.reduce((sum, t) => sum + t.length, 0) / Math.max(totalDocs, 1)
-
-            for (let i = 0; i < allDocs.length; i++) {
-              const doc = allDocs[i]
-              const tokens = allTokens[i]
-              const score = computeBM25(
-                queryTokens,
-                tokens,
-                avgDocLen,
-                totalDocs,
-                docsContainingTerm,
-              )
-              if (score > 0) {
-                results.push({
-                  file: doc.file,
-                  line: doc.line,
-                  content: doc.text.trim(),
-                  score,
-                  description: doc.text.slice(0, 100),
-                  type: doc.text.includes('|') ? doc.text.split('|')[1]?.trim() || '' : '',
-                  frontmatter: doc.frontmatter,
-                })
+            const topicsDir = join(base, 'topics')
+            if (existsSync(topicsDir)) {
+              const files = await readdir(topicsDir).catch(() => [] as string[])
+              for (const file of files.filter((f: string) => f.endsWith('.md'))) {
+                const content = await readSafe(join(topicsDir, file))
+                const fm = extractFrontmatter(content)
+                const topicLines = content.split('\n')
+                const topicParagraphs = extractParagraphs(topicLines)
+                for (const p of topicParagraphs) {
+                  allDocs.push({
+                    text: p.text,
+                    file: `topics/${file}`,
+                    line: p.startLine,
+                    frontmatter:
+                      fm.description || fm.type
+                        ? `desc: "${fm.description}", type: "${fm.type}"`
+                        : undefined,
+                  })
+                }
               }
             }
 
-            if (results.length === 0) {
+            totalDocs = allDocs.length
+
+            if (mode === 'precise') {
               for (const doc of allDocs) {
                 if (doc.text.toLowerCase().includes(q)) {
                   results.push({
                     file: doc.file,
                     line: doc.line,
                     content: doc.text.trim(),
-                    score: 0.1,
-                    description: doc.text.slice(0, 100),
+                    score: 1,
+                    description: '',
                     type: '',
                     frontmatter: doc.frontmatter,
                   })
                 }
               }
+            } else {
+              const allTokens = allDocs.map((d) => tokenize(d.text))
+              for (const tokens of allTokens) {
+                const seen = new Set<string>()
+                for (const t of tokens) {
+                  if (!seen.has(t)) {
+                    seen.add(t)
+                    docsContainingTerm.set(t, (docsContainingTerm.get(t) || 0) + 1)
+                  }
+                }
+              }
+
+              const avgDocLen =
+                allTokens.reduce((sum, t) => sum + t.length, 0) / Math.max(totalDocs, 1)
+
+              for (let i = 0; i < allDocs.length; i++) {
+                const doc = allDocs[i]
+                const tokens = allTokens[i]
+                const score = computeBM25(
+                  queryTokens,
+                  tokens,
+                  avgDocLen,
+                  totalDocs,
+                  docsContainingTerm,
+                )
+                if (score > 0) {
+                  results.push({
+                    file: doc.file,
+                    line: doc.line,
+                    content: doc.text.trim(),
+                    score,
+                    description: doc.text.slice(0, 100),
+                    type: doc.text.includes('|') ? doc.text.split('|')[1]?.trim() || '' : '',
+                    frontmatter: doc.frontmatter,
+                  })
+                }
+              }
+
+              if (results.length === 0) {
+                for (const doc of allDocs) {
+                  if (doc.text.toLowerCase().includes(q)) {
+                    results.push({
+                      file: doc.file,
+                      line: doc.line,
+                      content: doc.text.trim(),
+                      score: 0.1,
+                      description: doc.text.slice(0, 100),
+                      type: '',
+                      frontmatter: doc.frontmatter,
+                    })
+                  }
+                }
+              }
+
+              const ctxResults = await queryContextMode(q, args.max_results)
+              results.push(...ctxResults)
+
+              results.sort((a, b) => b.score - a.score)
             }
 
-            const ctxResults = await queryContextMode(q, args.max_results)
-            results.push(...ctxResults)
+            const limited = results.slice(0, args.max_results)
 
-            results.sort((a, b) => b.score - a.score)
+            if (limited.length === 0) return 'No results found.'
+
+            const lines = limited.map((r) => {
+              let entry = `[${r.file}:${r.line}] (score: ${r.score.toFixed(3)}) ${r.content}`
+              if (r.frontmatter) {
+                entry += `\n  └─ metadata: ${r.frontmatter}`
+              }
+              return entry
+            })
+
+            const usage =
+              mode === 'semantic'
+                ? `\n\nTip: Results ranked by BM25 relevance. Pass specific technical terms for best matches. If results seem off, try mode="precise" for exact substring matching.`
+                : ''
+
+            return lines.join('\n') + usage
+          } catch (err) {
+            return `memory_search error: ${err instanceof Error ? err.message : String(err)}`
           }
-
-          const limited = results.slice(0, args.max_results)
-
-          if (limited.length === 0) return 'No results found.'
-
-          const lines = limited.map((r) => {
-            let entry = `[${r.file}:${r.line}] (score: ${r.score.toFixed(3)}) ${r.content}`
-            if (r.frontmatter) {
-              entry += `\n  └─ metadata: ${r.frontmatter}`
-            }
-            return entry
-          })
-
-          const usage =
-            mode === 'semantic'
-              ? `\n\nTip: Results ranked by BM25 relevance. Pass specific technical terms for best matches. If results seem off, try mode="precise" for exact substring matching.`
-              : ''
-
-          return lines.join('\n') + usage
         },
       }),
 
@@ -978,4 +1001,4 @@ export default (async ({ client, directory }) => {
       }),
     },
   }
-}) satisfies Plugin
+}

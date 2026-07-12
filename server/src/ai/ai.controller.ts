@@ -1,0 +1,45 @@
+import { Controller, Post, Body, Sse, UseGuards } from '@nestjs/common'
+import { AuthGuard } from '@nestjs/passport'
+import { Observable } from 'rxjs'
+import { CurrentUser } from '../common/decorators/current-user.decorator'
+import { AiService, type UserRequirements } from './ai.service'
+
+@Controller('ai')
+@UseGuards(AuthGuard('jwt'))
+export class AiController {
+  constructor(private readonly aiService: AiService) {}
+
+  @Post('chat')
+  @Sse()
+  chat(@Body('message') message: string, @CurrentUser('id') _userId: string) {
+    return new Observable<{ data: string }>((subscriber) => {
+      this.aiService.chat(message, (event) => {
+        subscriber.next({ data: JSON.stringify(event) })
+      })
+    })
+  }
+
+  @Post('plan')
+  @Sse()
+  plan(@Body() requirements: UserRequirements, @CurrentUser('id') userId: string) {
+    return new Observable<{ data: string }>((subscriber) => {
+      this.aiService.plan(requirements, userId, (event) => {
+        subscriber.next({ data: JSON.stringify(event) })
+      })
+    })
+  }
+
+  @Post('modify')
+  @Sse()
+  modify(
+    @Body('planId') planId: string,
+    @Body('request') request: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return new Observable<{ data: string }>((subscriber) => {
+      this.aiService.modify(planId, request, userId, (event) => {
+        subscriber.next({ data: JSON.stringify(event) })
+      })
+    })
+  }
+}

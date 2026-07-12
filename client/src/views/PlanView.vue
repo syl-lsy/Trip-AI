@@ -1,10 +1,13 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import OutlineSidebar from '@/components/plan/OutlineSidebar.vue'
+import TimelineCenter from '@/components/plan/TimelineCenter.vue'
+import ChatPanel from '@/components/plan/ChatPanel.vue'
+</script>
 
 <template>
-  <div class="flex items-center justify-center h-64 text-gray-400">
-    <div class="text-center">
-      <div class="text-4xl mb-2">🚧</div>
-      <p>Coming soon</p>
-    </div>
+  <div class="fixed inset-0 top-14 flex bg-bg-base">
+    <OutlineSidebar />
+    <TimelineCenter />
+    <ChatPanel />
   </div>
 </template>

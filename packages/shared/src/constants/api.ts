@@ -18,6 +18,11 @@ export const ROUTES = {
   UPLOAD: {
     AVATAR: '/upload/avatar',
   },
+  AI: {
+    CHAT: '/ai/chat',
+    PLAN: '/ai/plan',
+    MODIFY: '/ai/modify',
+  },
 } as const
 
 export const CORS = {
