@@ -64,6 +64,17 @@
 - **已有功能新增/修改** → 直接在已有文档补充
 - **Bug 修复** → 直接在已有文档补充
 
+## 记忆记录
+
+每次功能开发完成后（无论是否走 dev-cycle），必须调用 `memory_write` 记录以下信息：
+
+| 分类       | 适用场景           | 示例                                             |
+| ---------- | ------------------ | ------------------------------------------------ |
+| `decision` | 架构决策、技术选型 | "采用 PrismaPg driver adapter 替代无参数构造"    |
+| `config`   | 配置文件/依赖变更  | "将 server dev 脚本从 nest start 改为 tsx watch" |
+| `bugfix`   | Bug 修复经验       | "Prisma 7.x 不再支持 PrismaClient() 无参数构造"  |
+| `lesson`   | 通用经验、注意事项 | "shared 包需提供 ESM + CJS 双入口"               |
+
 ## 提示词开发规范
 
 涉及任何 prompt/提示词的编写、修改或优化时（包括 `.opencode/prompts/` 中的 agent prompt
