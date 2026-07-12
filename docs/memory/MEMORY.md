@@ -71,6 +71,14 @@ Last updated: 2026-07-09
 
 ## Auto Memory（AI 自动记录）
 
+- 2026-07-12 | config | 每日笔记自动归档阈值从 30 天改为 7 天：auto-memory.ts Plugin 新增 gcOldDailyNotes()，归档到 daily-archives/YYYY-MM.md，保留 [category] 关键行
+
+- 2026-07-12 | lesson | shared 包需提供 ESM + CJS 双入口（exports.import→TS 源码，exports.require→编译后的 CJS），兼容 Vite 和 NestJS 的模块系统差异
+
+- 2026-07-12 | decision | 采用 PrismaPg driver adapter 替代无参数构造 PrismaClient，因为 Prisma 7.x 不再支持 new PrismaClient() 无参数
+
+- 2026-07-12 | config | server dev 脚本改为 nest start --watch，shared 包需先 build 为 CJS 供 NestJS 使用（import→TS 源码给 Vite，require→CJS 给 NestJS）
+
 - 2026-07-12 | decision | itecture] 将硬编码检测和语义化命名规则系统化融入开发流程已完成。三阶段实施：Phase 1 ESLint v9+Prettier+simple-git-hooks（flat config, naming-convention, no-magic-numbers）；Phase 2 packages/shared 常量包（api/storage/http/time/error）；Phase 3 重构现有代码硬编码。现在 pnpm lint 干净通过，pre-commit hook 强制拦截不合规代码。
 
 - 2026-07-12 | architecture | 将硬编码检测和语义化命名规则系统化融入开发流程已完成。三阶段实施：Phase 1 ESLint v9+Prettier+simple-git-hooks（flat config, naming-convention, no-magic-numbers）；Phase 2 packages/shared 常量包（api/storage/http/time/error）；Phase 3 重构现有代码硬编码。现在 pnpm lint 干净通过，pre-commit hook 强制拦截不合规代码。

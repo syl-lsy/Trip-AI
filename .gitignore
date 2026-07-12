@@ -11,3 +11,5 @@ coverage/
 docs/memory/sessions/
 docs/memory/daily/
 docs/memory/heartbeat-state.json
+docs/memory/conversations/
+docs/memory/daily-archives/
