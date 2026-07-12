@@ -12,7 +12,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: lsygcy1314
           POSTGRES_PASSWORD: 123456
@@ -39,6 +39,13 @@ jobs:
 
       - name: Generate Prisma client
         run: pnpm --filter server run prisma:generate
+        env:
+          DATABASE_URL: postgresql://lsygcy1314:123456@localhost:5432/trip-planner
+
+      - name: Enable pgvector extension
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
+          psql "$DATABASE_URL" -c "CREATE EXTENSION IF NOT EXISTS vector"
         env:
           DATABASE_URL: postgresql://lsygcy1314:123456@localhost:5432/trip-planner
 
