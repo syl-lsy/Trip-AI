@@ -13,6 +13,10 @@ type: architecture
 ```
 trip-planner/
 │
+├── .github/
+│   └── workflows/
+│       └── ci.yml                   # GitHub Actions CI 工作流
+├── .node-version                    # Node 版本锁定（当前 24）
 ├── client/                          # Vue 3 前端（frontend-dev 操作）
 │   ├── env.d.ts                     # 环境声明
 │   ├── index.html                   # 入口 HTML
@@ -190,28 +194,31 @@ trip-planner/
 
 ## 架构要点
 
-| 项目 | 说明 |
-|------|------|
-| **Monorepo 工具** | pnpm workspace（`pnpm-workspace.yaml`） |
-| **前端** | Vue 3 + Composition API + `<script setup>` + Tailwind CSS |
-| **后端** | NestJS + Prisma + PostgreSQL（pgvector）+ Redis |
-| **AI 层** | LangChain + LangGraph + pgvector RAG（待开发） |
-| **认证** | JWT + 手机验证码（无状态） |
-| **API 路径** | 基础路径 `/api`，统一响应 `{success, data?, error?}` |
-| **数据模型** | 4 张表（User, Itinerary, Destination, Knowledge） |
-| **模块化** | 后端按业务划分模块：auth / itinerary / destination / knowledge |
-| **子智能体** | 9 个子 Agent（coordinator + planner + 3 dev + tester + verifier + reviewer + docs-writer） |
-| **记忆系统** | 5 层文件架构（Hot / Warm / Daily / Topic / Cold） |
+| 项目              | 说明                                                                                       |
+| ----------------- | ------------------------------------------------------------------------------------------ |
+| **Monorepo 工具** | pnpm workspace（`pnpm-workspace.yaml`）                                                    |
+| **前端**          | Vue 3 + Composition API + `<script setup>` + Tailwind CSS                                  |
+| **后端**          | NestJS + Prisma + PostgreSQL（pgvector）+ Redis                                            |
+| **AI 层**         | LangChain + LangGraph + pgvector RAG（待开发）                                             |
+| **认证**          | JWT + 手机验证码（无状态）                                                                 |
+| **API 路径**      | 基础路径 `/api`，统一响应 `{success, data?, error?}`                                       |
+| **数据模型**      | 4 张表（User, Itinerary, Destination, Knowledge）                                          |
+| **模块化**        | 后端按业务划分模块：auth / itinerary / destination / knowledge                             |
+| **子智能体**      | 9 个子 Agent（coordinator + planner + 3 dev + tester + verifier + reviewer + docs-writer） |
+| **记忆系统**      | 5 层文件架构（Hot / Warm / Daily / Topic / Cold）                                          |
+| **CI/CD**         | GitHub Actions 持续集成（`.github/workflows/ci.yml`）                                      |
+| **上下文管理**    | context-mode 插件 + launchd 自动压缩（`~/.local/bin/opencode-auto-compact.sh`）            |
 
 ## Agent 操作边界
 
-| Agent | 操作目录 |
-|-------|---------|
-| frontend-dev | `client/` |
-| backend-dev | `server/` |
-| ai-dev | `ai/` |
-| docs-writer | `docs/` |
-| 其余 Agent | 全项目只读 |
+| Agent                | 操作目录                   |
+| -------------------- | -------------------------- |
+| frontend-dev         | `client/`                  |
+| backend-dev          | `server/`                  |
+| ai-dev               | `ai/`                      |
+| docs-writer          | `docs/`                    |
+| CI（GitHub Actions） | `.github/workflows/ci.yml` |
+| 其余 Agent           | 全项目只读                 |
 
 ## 相关文档
 
