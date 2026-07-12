@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
 import { API_PREFIX, CORS, PORT } from '@trip/shared'

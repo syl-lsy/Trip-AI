@@ -100,6 +100,10 @@ export default tseslint.config(
       parserOptions: {
         parser: tseslint.parser,
       },
+      globals: {
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+      },
     },
     rules: {
       'vue/multi-word-component-names': 'error',

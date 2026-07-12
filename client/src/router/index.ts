@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { STORAGE_KEYS } from '@trip/shared'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -39,6 +40,13 @@ const router = createRouter({
       ],
     },
   ],
+})
+
+router.beforeEach((to) => {
+  const token = localStorage.getItem(STORAGE_KEYS.TOKEN)
+  if (!token && to.name !== 'login') {
+    return { name: 'login' }
+  }
 })
 
 export default router
