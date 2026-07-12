@@ -95,7 +95,18 @@
 
 ## 双仓库同步规范
 
-每次功能开发完成（reviewer 通过后），必须将代码同步到 GitHub 和 Gitee 两个远程仓库：
+### 提交信息规范
+
+所有 Git commit message **必须使用英文书写**，遵循 Conventional Commits 格式：
+`<type>(<scope>): <description>`。例如 `feat(auth): add login API`、`fix: correct null pointer`。
+
+### 推送流程
+
+每次功能开发完成（reviewer 通过后），AI **必须主动询问**用户是否需要推送到远程仓库：
+
+> "代码已开发完成，是否需要推送到 GitHub 和 Gitee？"
+
+用户确认后执行同步，否则跳过。
 
 ```bash
 # 使用同步脚本（推荐）
