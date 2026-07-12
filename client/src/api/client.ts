@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { API_PREFIX, HTTP_STATUS, CONTENT_TYPE, TIMEOUT, ROUTES, STORAGE_KEYS } from '@trip/shared'
-import type { ApiResponse } from './types'
+import type { ApiResponse } from '@trip/shared'
 
 const http = axios.create({
   baseURL: API_PREFIX,

@@ -1,0 +1,24 @@
+{
+  "skill_name": "memory-maintenance",
+  "evals": [
+    {
+      "id": 1,
+      "name": "record-after-dev",
+      "prompt": "刚才完成了用户头像上传功能，帮我记录一下这次开发的关键决策。",
+      "expected_output": "调用 memory_write + 去重检查 + 归档检查",
+      "expectations": [
+        "调用了 memory_write",
+        "检查了 MEMORY.md 去重",
+        "检查了每日笔记归档状态",
+        "选择了正确的分类（decision/config/bugfix/lesson）"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "search-memory",
+      "prompt": "帮我查一下之前关于 JWT 配置做了哪些决策。",
+      "expected_output": "使用 memory_search 而非 memory-maintenance 流程",
+      "expectations": ["使用 memory_search 工具", "不调用 memory_write", "不做归档或去重操作"]
+    }
+  ]
+}

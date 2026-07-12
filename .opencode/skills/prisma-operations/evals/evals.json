@@ -1,0 +1,25 @@
+{
+  "skill_name": "prisma-operations",
+  "evals": [
+    {
+      "id": 1,
+      "name": "add-trip-table",
+      "prompt": "我需要给行程表加一个 status 字段，改成枚举类型，目前是 String。然后跑一下迁移。",
+      "expected_output": "按 6 步流程执行 schema 修改 + 迁移",
+      "expectations": [
+        "修改了 schema.prisma",
+        "运行了 prisma migrate dev",
+        "运行了 prisma generate",
+        "检查了 shared 类型是否需要同步更新",
+        "运行了 pnpm check"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "query-users",
+      "prompt": "帮我查一下数据库里有多少个用户。",
+      "expected_output": "直接执行查询，不走 prisma-operations 流程",
+      "expectations": ["不修改 schema", "不创建迁移", "直接使用数据库查询工具"]
+    }
+  ]
+}

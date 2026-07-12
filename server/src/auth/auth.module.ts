@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common'
-import { JwtModule } from '@nestjs/jwt'
+import { JwtModule, type JwtSignOptions } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
@@ -9,8 +9,10 @@ import { JwtStrategy } from './strategies/jwt.strategy'
   imports: [
     PassportModule,
     JwtModule.register({
-      secret: 'trip-planner-secret-key',
-      signOptions: { expiresIn: '7d' },
+      secret: process.env.JWT_SECRET!,
+      signOptions: {
+        expiresIn: (process.env.JWT_EXPIRES_IN ?? '7d') as JwtSignOptions['expiresIn'],
+      },
     }),
   ],
   controllers: [AuthController],

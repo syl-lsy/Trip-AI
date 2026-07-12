@@ -1,0 +1,11 @@
+{
+  "eval_id": 3,
+  "eval_name": "CSS颜色修改 (minor change)",
+  "prompt": "把登录页的提交按钮颜色从蓝色 #4A90D9 改成橙色 #F5A623，只需要修改 LoginView.vue 中的 button 样式。",
+  "expectations": [
+    "被正确判断为'小改动'，不走完整流水线",
+    "不创建完整 todowrite",
+    "直接修改文件而非走 dev agent",
+    "修改后补文档或调用 memory_write"
+  ]
+}

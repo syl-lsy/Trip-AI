@@ -86,7 +86,10 @@ graph TD
     ReviewFail -->|退回修复| AI
 
     Review -->|通过| Docs[docs-writer 文档更新]
-    Docs --> Done([完成报告])
+    Docs --> Push{推送?}
+    Push -->|是| Sync[同步 GitHub + Gitee]
+    Push -->|否| Done([完成报告])
+    Sync --> Done
 ```
 
 ### 3.2 单层任务流程
@@ -103,7 +106,10 @@ graph LR
     Tester -->|失败| Dev
     Verifier -->|通过| Reviewer[reviewer]
     Verifier -->|CRIT-高| Dev
-    Reviewer -->|通过| Done([完成])
+    Reviewer -->|通过| Push{推送?}
+    Push -->|是| Sync[同步 GitHub + Gitee]
+    Push -->|否| Done([完成])
+    Sync --> Done
     Reviewer -->|拒绝| Dev
 ```
 
@@ -146,15 +152,15 @@ graph LR
 
 **派发规则**：
 
-| 目标 Agent   | 派发条件                     |
-| ------------ | ---------------------------- |
-| planner      | 需求不清晰，需要先分析       |
-| frontend-dev | 变更涉及 `client/`           |
-| backend-dev  | 变更涉及 `server/`           |
-| ai-dev       | 变更涉及 `ai/`               |
-| tester       | dev agent 完成后**必须**派发 |
-| reviewer     | tester 通过后**必须**派发    |
-| docs-writer  | 公开接口变更时派发           |
+| 目标 Agent   | 派发条件                      |
+| ------------ | ----------------------------- |
+| planner      | 需求不清晰，需要先分析        |
+| frontend-dev | 变更涉及 `client/`            |
+| backend-dev  | 变更涉及 `server/`            |
+| ai-dev       | 变更涉及 `ai/`                |
+| tester       | dev agent 完成后**必须**派发  |
+| reviewer     | tester 通过后**必须**派发     |
+| docs-writer  | 每次 dev-cycle 完成后强制执行 |
 
 ### 4.2 planner（需求分析）
 
@@ -303,13 +309,16 @@ graph LR
    - 在项目根目录执行 `pnpm check`（= `pnpm lint && pnpm typecheck && pnpm -r build`）
    - 任一失败 → 退回对应 dev agent 修复，不继续测试
 1. 识别变更的包（client/server/ai）
-2. 运行对应包的完整测试套件：
+2. 检查对应包是否存在测试套件：
+   - 存在测试 → 运行 `pnpm --filter <pkg> run test`
+   - 无测试套件（如 Phase 1 阶段）→ 降级为仅验证工程门禁通过，报告"无测试套件，仅门禁通过"
+3. 存在测试时，运行对应包的完整测试套件：
    - 前端：`pnpm --filter client run test`
    - 后端：`pnpm --filter server run test`
    - AI：`pnpm --filter ai run test`
-3. 如果有测试失败，分析失败输出并报告根因
-4. 全部通过后，运行覆盖率检查：`pnpm --filter <pkg> run test:coverage`
-5. 验证覆盖率阈值：分支 >= 80%、函数 >= 80%、行 >= 80%、语句 >= 80%
+4. 如果有测试失败，分析失败输出并报告根因
+5. 全部通过后，运行覆盖率检查：`pnpm --filter <pkg> run test:coverage`
+6. 验证覆盖率阈值：分支 >= 80%、函数 >= 80%、行 >= 80%、语句 >= 80%
 
 **报告格式**：
 
@@ -405,7 +414,8 @@ graph LR
 1. 确定目标读者和文档类型
 2. 选择最匹配的文档模板
 3. 撰写/更新文档
-4. 按质量检查清单逐项确认
+4. 调用 `memory_write` 记录关键变更（decision / config / bugfix / lesson）
+5. 按质量检查清单逐项确认
 
 **文档类型覆盖**：
 
@@ -438,7 +448,10 @@ stateDiagram-v2
     Tester --> Reviewer: 测试通过
     Reviewer --> DevAgent: 审查拒绝，退回修复
     Reviewer --> DocsWriter: 审查通过
-    DocsWriter --> [*]: 文档更新完成
+    DocsWriter --> Push: 文档更新完成
+    Push --> Sync: 用户确认
+    Push --> [*]: 跳过推送
+    Sync --> [*]: 同步完成
 
     note right of DevAgent: 同一任务最多重试 2 次
     DevAgent --> FailReport: 第 3 次失败
@@ -457,14 +470,14 @@ stateDiagram-v2
 
 ## 6. 自定义命令映射
 
-| 命令              | 派发目标    | 触发场景       | 说明                                                                    |
-| ----------------- | ----------- | -------------- | ----------------------------------------------------------------------- |
-| `dev-cycle`       | coordinator | 日常开发       | 完整开发流水线：dev → gate → tester → verifier → reviewer → docs-writer |
-| `check-gates`     | 直执行      | 工程门禁       | 执行 `pnpm check`（lint + typecheck + build），手动确认门禁状态         |
-| `plan-task`       | planner     | 需求不清晰     | 分析需求，输出实施计划                                                  |
-| `review-code`     | reviewer    | 代码审查       | 只读审查指定代码                                                        |
-| `add-dep`         | build       | 新增依赖       | 用 Context7 查最新版本后安装                                            |
-| `compress-memory` | 脚本        | 记忆库接近上限 | 导出 → 聚类 → 合并 → 导入 → 清理                                        |
+| 命令              | 派发目标    | 触发场景       | 说明                                                                                  |
+| ----------------- | ----------- | -------------- | ------------------------------------------------------------------------------------- |
+| `dev-cycle`       | coordinator | 日常开发       | 完整开发流水线：dev → gate → tester → verifier → reviewer → docs-writer+memory → push |
+| `check-gates`     | 直执行      | 工程门禁       | 执行 `pnpm check`（lint + typecheck + build），手动确认门禁状态                       |
+| `plan-task`       | planner     | 需求不清晰     | 分析需求，输出实施计划                                                                |
+| `review-code`     | reviewer    | 代码审查       | 只读审查指定代码                                                                      |
+| `add-dep`         | build       | 新增依赖       | 用 Context7 查最新版本后安装                                                          |
+| `compress-memory` | 脚本        | 记忆库接近上限 | 导出 → 聚类 → 合并 → 导入 → 清理                                                      |
 
 ## 7. 跨 Agent 协作规范
 

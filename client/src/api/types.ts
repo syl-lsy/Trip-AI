@@ -1,15 +1,4 @@
-export interface ApiResponse<T = unknown> {
-  success: boolean
-  data?: T
-  error?: string
-}
-
-export interface User {
-  id: string
-  phone: string
-  nickname: string | null
-  createdAt: string
-}
+export type { ApiResponse, User, LoginResult } from '@trip/shared'
 
 export interface Itinerary {
   id: string

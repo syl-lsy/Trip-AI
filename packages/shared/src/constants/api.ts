@@ -6,6 +6,17 @@ export const ROUTES = {
   KNOWLEDGE: '/knowledge',
   DESTINATIONS: '/destinations',
   ITINERARIES: '/itineraries',
+  AUTH: {
+    SEND_CODE: '/auth/send-code',
+    LOGIN: '/auth/login',
+    PROFILE: '/auth/profile',
+  },
+  USER: {
+    PROFILE_DETAIL: '/user/profile-detail',
+  },
+  UPLOAD: {
+    AVATAR: '/upload/avatar',
+  },
 } as const
 
 export const CORS = {

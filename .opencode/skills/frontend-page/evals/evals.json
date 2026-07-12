@@ -1,0 +1,25 @@
+{
+  "skill_name": "frontend-page",
+  "evals": [
+    {
+      "id": 1,
+      "name": "create-profile-page",
+      "prompt": "新建一个用户设置页面 /settings，展示用户个人信息和偏好设置。需要新的 View、路由、导航。",
+      "expected_output": "按 5 步流程创建完整的前端页面",
+      "expectations": [
+        "创建了新的 View 文件",
+        "注册了路由（懒加载）",
+        "添加了导航项",
+        "创建了对应的 API 调用层",
+        "路由 path 使用了 ROUTES.* 常量"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "fix-login-button-style",
+      "prompt": "把登录页的登录按钮边距改大一点，padding 从 2 改成 4。",
+      "expected_output": "不被识别为 frontend-page 任务，走小改动流程",
+      "expectations": ["不创建新页面", "判断为 CSS 小改动", "不涉及路由或导航变更"]
+    }
+  ]
+}

@@ -71,6 +71,34 @@ Last updated: 2026-07-09
 
 ## Auto Memory（AI 自动记录）
 
+- 2026-07-12 | decision | 用户头像上传功能已完成：采用 multipart/form-data 上传到 /api/user/avatar 端点，文件存储到 server/uploads/avatars/ 目录，数据库只存相对路径，前端使用 Pinia store 管理上传状态
+
+- 2026-07-12 | config | dev-cycle skill description 优化：3 轮迭代后从中文改为英文描述，核心信号改为 business-logic code changes → activate，提高触发精度
+
+- 2026-07-12 | config | 三层可靠性保障：AGENTS.md 第 0 步强制加载 dev-cycle skill + coordinator.txt 流程加加载指令 + Plugin compaction 注入流水线指令
+
+- 2026-07-12 | decision | itecture] 用户详情页面已实现：新增 GET /api/user/profile-detail 端点和 /profile 前端路由/页面，展示当前登录用户的手机号和昵称
+
+- 2026-07-12 | config | 登录页提交按钮颜色从 #4A90D9（primary）改为 #F5A623（橙色），在 LoginView.vue 中直接替换 Tailwind class 为 bg-[#F5A623] + hover:bg-[#F5A623]/90
+
+- 2026-07-12 | architecture | 用户详情页面已实现：新增 GET /api/user/profile-detail 端点和 /profile 前端路由/页面，展示当前登录用户的手机号和昵称
+
+- 2026-07-12 | config | AGENTS.md 新增 Skill 和 MCP 开发规范：创建/修改 skill 前必须先加载 skill-creator skill，创建/修改 MCP 前必须先加载 mcp-builder skill
+
+- 2026-07-12 | config | coordinator.txt + dev-cycle.md + fork-optimization.md + coding-standards.md 同步修复：所有流水线引用从6步更新为7步（新增推送同步），docs-writer触发条件统一为"每次dev-cycle完成后强制执行"
+
+- 2026-07-12 | config | AGENTS.md + agent-workflow.md 全面修复：流水线从6步增至7步（新增🚀推送同步），小改动补档策略细化，门禁描述去歧义，去除重复内容，tester增加无测试套件降级策略，docs-writer增加memory_write步骤，所有mermaid流程图增加推送环节
+
+- 2026-07-12 | decision | itecture] Phase 1 认证模块完善完成：JWT 密钥改为从 .env 读取（JWT_SECRET, JWT_EXPIRES_IN），Prisma User 模型添加 role 字段（默认 "user"），共享类型移至 packages/shared/src/api/types.ts，Auth 路由路径定义为 ROUTES.AUTH.* 常量
+
+- 2026-07-12 | lesson | @nestjs/jwt 的 expiresIn 使用 ms 包的 StringValue 类型，env 变量读取需 as JwtSignOptions['expiresIn'] 类型断言
+
+- 2026-07-12 | bugfix | Prisma 7 迁移 shadow database 需要 vector 扩展 — 在初始 migration.sql 中添加 CREATE EXTENSION IF NOT EXISTS vector 避免 P3018 错误
+
+- 2026-07-12 | architecture | Phase 1 认证模块完善完成：JWT 密钥改为从 .env 读取（JWT_SECRET, JWT_EXPIRES_IN），Prisma User 模型添加 role 字段（默认 "user"），共享类型移至 packages/shared/src/api/types.ts，Auth 路由路径定义为 ROUTES.AUTH.* 常量
+
+- 2026-07-12 | config | 清理 git 仓库：排除 auto-generated 文件（conversations/sessions/daily/字体），移除 5.2MB 字体 + 130+ 自动生成文件的跟踪，仓库体积大幅减小
+
 - 2026-07-12 | config | 每日笔记自动归档阈值从 30 天改为 7 天：auto-memory.ts Plugin 新增 gcOldDailyNotes()，归档到 daily-archives/YYYY-MM.md，保留 [category] 关键行
 
 - 2026-07-12 | lesson | shared 包需提供 ESM + CJS 双入口（exports.import→TS 源码，exports.require→编译后的 CJS），兼容 Vite 和 NestJS 的模块系统差异

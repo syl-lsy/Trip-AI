@@ -1,0 +1,28 @@
+{
+  "skill_name": "constants-extension",
+  "evals": [
+    {
+      "id": 1,
+      "name": "add-upload-route",
+      "prompt": "文件上传的 API 路径是 /api/upload/avatar，把这条路径加到常量里。",
+      "expected_output": "按 5 步流程添加常量到 api.ts",
+      "expectations": [
+        "定位到 constants/api.ts",
+        "使用 as const 断言",
+        "UPPER_CASE 命名",
+        "更新引用处的 import"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "business-logic-change",
+      "prompt": "把登录失败的错误提示改成'手机号或验证码错误'。",
+      "expected_output": "直接修改业务代码，不走常量扩展流程",
+      "expectations": [
+        "不修改 constants/ 文件",
+        "直接修改业务代码中的错误信息",
+        "不使用 as const 或常量导出"
+      ]
+    }
+  ]
+}

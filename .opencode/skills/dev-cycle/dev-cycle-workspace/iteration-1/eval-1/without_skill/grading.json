@@ -1,0 +1,27 @@
+{
+  "expectations": [
+    {
+      "text": "创建了 7 步 todowrite",
+      "passed": false,
+      "evidence": "没有创建 todowrite，按任务驱动推进"
+    },
+    { "text": "todowrite 第 7 项为推送同步", "passed": false, "evidence": "无 todowrite" },
+    {
+      "text": "步骤按 1→7 顺序执行，没有跳跃",
+      "passed": false,
+      "evidence": "按后端→前端的自然顺序，非 7 步流水线"
+    },
+    {
+      "text": "第 7 步主动询问了推送",
+      "passed": false,
+      "evidence": "报告明确说 '没有询问。用户要求的是报告中包含的信息收集，不是实际推送'"
+    },
+    { "text": "调用了 memory_write", "passed": true, "evidence": "确实调用了 memory_write" },
+    {
+      "text": "pnpm check 在适当时机执行",
+      "passed": true,
+      "evidence": "最后一步执行了 pnpm check 且全部通过"
+    }
+  ],
+  "summary": { "passed": 2, "failed": 4, "total": 6, "pass_rate": 0.33 }
+}

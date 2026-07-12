@@ -1,19 +1,15 @@
+import { ROUTES } from '@trip/shared'
 import { post, get } from './client'
-import type { User } from './types'
-
-export interface LoginResult {
-  token: string
-  user: User
-}
+import type { LoginResult, User } from '@trip/shared'
 
 export function sendCode(phone: string) {
-  return post<null>('/auth/send-code', { phone })
+  return post<null>(ROUTES.AUTH.SEND_CODE, { phone })
 }
 
 export function login(phone: string, code: string) {
-  return post<LoginResult>('/auth/login', { phone, code })
+  return post<LoginResult>(ROUTES.AUTH.LOGIN, { phone, code })
 }
 
 export function getProfile() {
-  return get<User>('/auth/profile')
+  return get<User>(ROUTES.AUTH.PROFILE)
 }

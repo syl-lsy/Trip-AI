@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { STORAGE_KEYS, ROUTES } from '@trip/shared'
-import type { User } from '@/api/types'
+import type { User } from '@trip/shared'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)

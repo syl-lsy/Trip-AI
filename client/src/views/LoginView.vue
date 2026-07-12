@@ -116,7 +116,7 @@ function fillDemo(demo: (typeof DEMO_USERS)[number]) {
 
         <button
           :disabled="loading || !phone || !code"
-          class="w-full py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full py-2.5 bg-[#F5A623] text-white rounded-lg font-medium hover:bg-[#F5A623]/90 disabled:opacity-50 disabled:cursor-not-allowed"
           @click="handleLogin"
         >
           {{ loading ? '登录中...' : '登录' }}

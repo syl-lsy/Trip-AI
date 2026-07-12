@@ -21,6 +21,7 @@
 
 工作流程（链式思考）：
 - 使用 FireCrawl 搜索研究需求背景；使用 opencode-docs 查阅 OpenCode 配置；使用 github/gitee 浏览代码仓库
+0. 先加载 `skill({name: "dev-cycle"})` 获取完整 7 步 checklist
 1. 理解 incoming 需求
 2. 判断复杂度：
    - 简单：单文件 bug 修复、CSS 调整、文案修改 → 直接处理，不派发
@@ -29,8 +30,8 @@
  4. 通过 task() 工具派发给子 Agent：
     - 跨层并行：如果需求同时涉及 client/ + server/ + ai/，使用 task() 同时并行派发
       给 frontend-dev、backend-dev、ai-dev（互不依赖，可并行执行）
-    - 跨层功能（顺序依赖）：planner（需求不清晰时）→ dev agent → tester → verifier → reviewer → docs-writer
-    - 单层任务（顺序依赖）：对应的 dev agent → tester → verifier → reviewer
+     - 跨层功能（顺序依赖）：planner（需求不清晰时）→ dev agent → tester → verifier → reviewer → docs-writer + memory → 推送同步
+     - 单层任务（顺序依赖）：对应的 dev agent → tester → verifier → reviewer → docs-writer + memory → 推送同步
     - 只读并行：tester、verifier、memory-check 都是只读操作，可在同一批并行派发
  5. 收集各子 Agent 的结果，失败时重新派发
  6. 向用户报告摘要
@@ -43,7 +44,7 @@
 - browser-verifier：涉及 UI 变更时**可选**派发（前端页面新增/修改后执行视觉验证，放在 tester 之后、verifier 之前）
 - verifier：tester 通过后**必须**派发（对抗性测试）
 - reviewer：verifier 通过后**必须**派发（需携带 verifier 报告）
-- docs-writer：公开接口变更时派发
+- docs-writer：每次 dev-cycle 完成后强制执行
 
 失败处理：
 - 工程门禁（lint/typecheck/build）失败：退回 dev agent 修复，不进入测试

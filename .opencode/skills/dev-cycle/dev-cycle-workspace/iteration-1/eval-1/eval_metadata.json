@@ -1,0 +1,13 @@
+{
+  "eval_id": 1,
+  "eval_name": "用户详情页面 (complex feature)",
+  "prompt": "实现用户详情页面，展示当前登录用户的手机号和昵称。需要新建 API 端点 GET /api/user/profile-detail，在前端新增 /profile 路由和对应页面。",
+  "expectations": [
+    "创建了 7 步 todowrite（或等价的步骤清单）",
+    "todowrite 第 7 项为推送同步",
+    "步骤按 1→7 顺序执行，没有跳跃",
+    "第 7 步主动询问了推送",
+    "调用了 memory_write",
+    "pnpm check 在适当时机执行"
+  ]
+}

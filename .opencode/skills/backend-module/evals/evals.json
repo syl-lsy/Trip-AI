@@ -1,0 +1,29 @@
+{
+  "skill_name": "backend-module",
+  "evals": [
+    {
+      "id": 1,
+      "name": "create-destination-module",
+      "prompt": "现在要实现目的地管理功能。需要新建 Destination 模块，包含 CRUD API：GET /api/destinations（列表）、POST /api/destinations（新建）、GET /api/destinations/:id（详情）。数据库已经有 Destination 表了，但 NestJS 模块还只是个空壳。需要完整的 destination 模块。",
+      "expected_output": "按 7 步流程创建完整的 backend module",
+      "expectations": [
+        "创建了完整的 NestJS 模块（module + controller + service + dto）",
+        "schema 确认现有表结构",
+        "AppModule 注册了 DestinationModule",
+        "shared 类型存在对应接口",
+        "路由路径使用了 ROUTES.* 常量"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "modify-auth-service",
+      "prompt": "在 auth.service.ts 的 getProfile 方法里加一个字段 avatar。不需要新建模块或改数据库。",
+      "expected_output": "不被识别为 backend-module 任务，走小改动流程",
+      "expectations": [
+        "不创建完整的 NestJS 模块",
+        "判断为小改动而非新建模块",
+        "不创建 migration 或 schema 变更"
+      ]
+    }
+  ]
+}

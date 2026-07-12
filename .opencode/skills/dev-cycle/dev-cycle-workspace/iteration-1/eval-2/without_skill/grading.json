@@ -1,0 +1,27 @@
+{
+  "expectations": [
+    {
+      "text": "被判断为 bug 修复，走完整 7 步流水线",
+      "passed": false,
+      "evidence": "没有走流水线，按直觉步骤处理"
+    },
+    {
+      "text": "创建了 7 步 todowrite",
+      "passed": false,
+      "evidence": "无 todowrite，只是列出几个步骤"
+    },
+    {
+      "text": "步骤按 1→7 顺序执行",
+      "passed": false,
+      "evidence": "顺序为：查代码→查schema→运行check→...，仅 4 步"
+    },
+    { "text": "第 7 步主动询问推送", "passed": true, "evidence": "问了 '需要推送吗？'" },
+    {
+      "text": "调用了 memory_write",
+      "passed": false,
+      "evidence": "明确说 '尚未调用。是否要记录该决策？'"
+    },
+    { "text": "未在最终报告前跳过推送询问", "passed": true, "evidence": "推送询问出现在报告结尾" }
+  ],
+  "summary": { "passed": 2, "failed": 4, "total": 6, "pass_rate": 0.33 }
+}

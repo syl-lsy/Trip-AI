@@ -10,6 +10,7 @@ model User {
   id          String      @id @default(uuid())
   phone       String      @unique
   nickname    String?
+  role        String      @default("user")
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   itineraries Itinerary[]

@@ -1,0 +1,82 @@
+[
+  {
+    "query": "开始开发用户详情页面，需要后端 API 加前端页面",
+    "should_trigger": true
+  },
+  {
+    "query": "帮我修一下登录接口返回的 role 字段丢失的 bug",
+    "should_trigger": true
+  },
+  {
+    "query": "实现 Phase 2 智能规划工作台，从后端到前端完整走一遍",
+    "should_trigger": true
+  },
+  {
+    "query": "新功能：用户注册页面，手机号+密码+昵称，全栈实现",
+    "should_trigger": true
+  },
+  {
+    "query": "修复行程列表页数据不刷新的问题",
+    "should_trigger": true
+  },
+  {
+    "query": "添加目的地搜索 API 端点 GET /api/destinations/search",
+    "should_trigger": true
+  },
+  {
+    "query": "帮我重构 auth.service.ts 的 login 方法，拆分职责",
+    "should_trigger": true
+  },
+  {
+    "query": "跑一下 dev-cycle 我要开发知识库的 RAG 检索功能",
+    "should_trigger": true
+  },
+  {
+    "query": "实现用户头像上传功能，后端存 OSS，前端加组件",
+    "should_trigger": true
+  },
+  {
+    "query": "帮我把 pnpm check 的 lint 规则弄一下，eslint 配置改改",
+    "should_trigger": false
+  },
+  {
+    "query": "把登录页按钮颜色从蓝色改成橙色",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我查一下 auth.service.ts 第 30 行是什么意思",
+    "should_trigger": false
+  },
+  {
+    "query": "这个项目用了什么技术栈",
+    "should_trigger": false
+  },
+  {
+    "query": "README.md 帮我补一下安装步骤",
+    "should_trigger": false
+  },
+  {
+    "query": "在 AGENTS.md 里加一段关于常量导入的说明",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我回顾一下 Phase 1 做了哪些事",
+    "should_trigger": false
+  },
+  {
+    "query": "新增一个 npm 包 @trip/utils，装一下依赖",
+    "should_trigger": false
+  },
+  {
+    "query": "输入 'npm run dev' 启动项目",
+    "should_trigger": false
+  },
+  {
+    "query": "把 .env.example 里 JWT 密钥改一下",
+    "should_trigger": false
+  },
+  {
+    "query": "这个页面 CSS 居中有问题，帮我调一下",
+    "should_trigger": false
+  }
+]

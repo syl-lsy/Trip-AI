@@ -1,0 +1,19 @@
+{
+  "expectations": [
+    {
+      "text": "被判断为 bug 修复，走完整 7 步流水线",
+      "passed": true,
+      "evidence": "被判断为 bug fix，走完整 7 步"
+    },
+    { "text": "创建了 7 步 todowrite", "passed": true, "evidence": "创建了完整的 7 步清单" },
+    { "text": "步骤按 1→7 顺序执行", "passed": true, "evidence": "每一步按顺序执行" },
+    { "text": "第 7 步主动询问推送", "passed": true, "evidence": "使用固定措辞询问推送" },
+    { "text": "调用了 memory_write", "passed": true, "evidence": "在第 6 步调用 memory_write" },
+    {
+      "text": "未在最终报告前跳过推送询问",
+      "passed": true,
+      "evidence": "推送在第 7 步 pending，等待用户确认"
+    }
+  ],
+  "summary": { "passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0 }
+}

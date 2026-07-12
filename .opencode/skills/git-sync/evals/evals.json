@@ -1,0 +1,24 @@
+{
+  "skill_name": "git-sync",
+  "evals": [
+    {
+      "id": 1,
+      "name": "push-after-feature",
+      "prompt": "开发完成了，把代码提交并推送到远程仓库。",
+      "expected_output": "按 5 步流程执行提交 + 推送询问",
+      "expectations": [
+        "运行了 git status",
+        "commit message 使用英文 Conventional Commits 格式",
+        "主动询问是否推送到 GitHub 和 Gitee",
+        "不提交 .env 或生成文件"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "check-git-log",
+      "prompt": "帮我看看最近的提交历史。",
+      "expected_output": "使用 git log 查看，不走推送流程",
+      "expectations": ["使用 git log 命令", "不执行 git add/commit", "不询问推送"]
+    }
+  ]
+}

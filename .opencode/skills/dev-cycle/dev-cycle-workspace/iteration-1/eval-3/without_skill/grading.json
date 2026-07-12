@@ -1,0 +1,21 @@
+{
+  "expectations": [
+    {
+      "text": "被正确判断为'小改动'，不走完整流水线",
+      "passed": true,
+      "evidence": "判断为简单 CSS 修改"
+    },
+    { "text": "不创建完整 todowrite", "passed": true, "evidence": "没有创建 todo" },
+    {
+      "text": "直接修改文件而非走 dev agent",
+      "passed": true,
+      "evidence": "直接修改 LoginView.vue"
+    },
+    {
+      "text": "修改后补文档或调用 memory_write",
+      "passed": false,
+      "evidence": "没有调用 memory_write，也没有更新文档"
+    }
+  ],
+  "summary": { "passed": 3, "failed": 1, "total": 4, "pass_rate": 0.75 }
+}

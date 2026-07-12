@@ -1,0 +1,13 @@
+{
+  "eval_id": 2,
+  "eval_name": "role字段bug修复 (bug fix)",
+  "prompt": "修复登录接口返回的 role 字段丢失 bug。登录时 login 接口返回的 user 对象没有 role 字段，需要确认 auth.service.ts 中 login 方法的返回值包含 role。",
+  "expectations": [
+    "被判断为 bug 修复，走完整 7 步流水线",
+    "创建了 7 步 todowrite",
+    "步骤按 1→7 顺序执行",
+    "第 7 步主动询问推送",
+    "调用了 memory_write",
+    "未在最终报告前跳过推送询问"
+  ]
+}

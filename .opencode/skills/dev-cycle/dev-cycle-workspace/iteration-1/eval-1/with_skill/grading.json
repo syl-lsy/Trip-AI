@@ -1,0 +1,35 @@
+{
+  "expectations": [
+    {
+      "text": "创建了 7 步 todowrite",
+      "passed": true,
+      "evidence": "报告显示创建了完整的 7 步 todowrite"
+    },
+    {
+      "text": "todowrite 第 7 项为推送同步",
+      "passed": true,
+      "evidence": "第 7 项为 '🚀 推送同步'"
+    },
+    {
+      "text": "步骤按 1→7 顺序执行，没有跳跃",
+      "passed": true,
+      "evidence": "报告确认严格按 1→7 顺序执行"
+    },
+    {
+      "text": "第 7 步主动询问了推送",
+      "passed": true,
+      "evidence": "报告结尾询问 '是否需要推送到 GitHub 和 Gitee？'"
+    },
+    {
+      "text": "调用了 memory_write",
+      "passed": true,
+      "evidence": "报告显示第 6 步已调用 memory_write"
+    },
+    {
+      "text": "pnpm check 在适当时机执行",
+      "passed": true,
+      "evidence": "第 2 步工程门禁执行了 pnpm check"
+    }
+  ],
+  "summary": { "passed": 6, "failed": 0, "total": 6, "pass_rate": 1.0 }
+}

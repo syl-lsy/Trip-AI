@@ -91,4 +91,4 @@ layer: fullstack
 
 4. **lint-staged 配置**：仅对 `*.ts`、`*.vue`、`*.mjs`、`*.json` 文件执行 lint 和 format，避免对非代码文件（如 markdown）做不必要的格式化。
 
-5. **此功能开发遵循了 `AGENTS.md` 中的"功能完成文档沉淀"规范**：功能开发完成后由 docs-writer 产出本功能文档。
+5. **此功能开发遵循了 `AGENTS.md` 中的开发流水线规范**：功能开发完成后走完完整 dev-cycle（含文档沉淀 + 记忆记录 + 推送同步）。
