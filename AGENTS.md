@@ -17,6 +17,23 @@
 
 禁止凭记忆直接编写，必须以官方文档的最新版本为准。
 
+## 开发流水线
+
+每次功能开发必须按以下顺序，不可跳过任何步骤：
+
+1. **代码实现** → 对应 dev agent（frontend-dev / backend-dev / ai-dev）
+2. **⛔ 工程门禁** → 运行 `pnpm check`（包含 lint + typecheck + build）
+3. **✅ 测试验收** → tester 运行测试套件 + 覆盖率检查
+4. **🔒 对抗性测试** → verifier 查找安全漏洞和边界缺陷
+5. **👁 代码审查** → reviewer 审查代码质量
+6. **📝 文档沉淀** → docs-writer 更新功能文档
+
+**门禁规则**：
+
+- lint / typecheck / build 任一失败 → 退回对应 dev agent 修复，不进入下一步
+- 任何 Agent 发现门禁环节被跳过 → 拒绝继续并报告
+- 工程门禁由 tester 子 Agent 在测试前执行
+
 ## 文档撰写
 
 当需要撰写任何文档时，使用 @docs-writer 子智能体完成。

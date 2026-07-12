@@ -28,17 +28,17 @@ trip-planner/
 
 ## 2. 子智能体总览
 
-| 名称 | 职责 | 操作目录 | 模型 | 编辑权限 | 核心约束 |
-|------|------|---------|------|---------|---------|
-| **coordinator** | 调度协调器：接收需求、拆分子任务、按序派发、汇总结果 | 全栈调度 | deepseek-v4-flash | ❌ 禁止编辑 | 角色仅限编排调度 |
-| **planner** | 需求分析：分析 PRD 和代码库，输出实施计划 | 只读 | deepseek-v4-flash | ❌ 禁止编辑 | 只读，不创建/修改任何文件 |
-| **frontend-dev** | Vue 3 前端开发（Composition API + Tailwind CSS） | `client/` | deepseek-v4-flash | ✅ 完整编辑 | 始终使用 `<script setup>` |
-| **backend-dev** | NestJS 后端开发（Prisma + PostgreSQL + Redis） | `server/` | deepseek-v4-flash | ✅ 完整编辑 | 模块结构、标准响应格式 |
-| **ai-dev** | AI Agent 开发（LangChain + LangGraph + pgvector） | `ai/` | deepseek-v4-flash | ✅ 完整编辑 | 禁止 PII 泄漏 |
-| **tester** | 测试验收：运行测试套件、检查覆盖率 | 只读 | deepseek-v4-flash | ❌ 禁止编辑 | 运行全部测试（回归检查） |
-| **verifier** | 对抗性测试：尝试破坏实现，发现安全漏洞和边界缺陷 | 只读 | deepseek-v4-flash | ❌ 禁止编辑 | 每个发现附带复现步骤 |
-| **reviewer** | 代码审查：安全、性能、可维护性、可读性 | 只读 | deepseek-v4-pro | ❌ 禁止编辑 | 引用精确文件:行号 |
-| **docs-writer** | 知识库工程师：API 文档、架构文档、报告等 | `docs/` | deepseek-v4-flash | ✅ 文档编辑 | 上下文自包含、YAML frontmatter |
+| 名称             | 职责                                                 | 操作目录  | 模型              | 编辑权限    | 核心约束                       |
+| ---------------- | ---------------------------------------------------- | --------- | ----------------- | ----------- | ------------------------------ |
+| **coordinator**  | 调度协调器：接收需求、拆分子任务、按序派发、汇总结果 | 全栈调度  | deepseek-v4-flash | ❌ 禁止编辑 | 角色仅限编排调度               |
+| **planner**      | 需求分析：分析 PRD 和代码库，输出实施计划            | 只读      | deepseek-v4-flash | ❌ 禁止编辑 | 只读，不创建/修改任何文件      |
+| **frontend-dev** | Vue 3 前端开发（Composition API + Tailwind CSS）     | `client/` | deepseek-v4-flash | ✅ 完整编辑 | 始终使用 `<script setup>`      |
+| **backend-dev**  | NestJS 后端开发（Prisma + PostgreSQL + Redis）       | `server/` | deepseek-v4-flash | ✅ 完整编辑 | 模块结构、标准响应格式         |
+| **ai-dev**       | AI Agent 开发（LangChain + LangGraph + pgvector）    | `ai/`     | deepseek-v4-flash | ✅ 完整编辑 | 禁止 PII 泄漏                  |
+| **tester**       | 测试验收：运行测试套件、检查覆盖率                   | 只读      | deepseek-v4-flash | ❌ 禁止编辑 | 运行全部测试（回归检查）       |
+| **verifier**     | 对抗性测试：尝试破坏实现，发现安全漏洞和边界缺陷     | 只读      | deepseek-v4-flash | ❌ 禁止编辑 | 每个发现附带复现步骤           |
+| **reviewer**     | 代码审查：安全、性能、可维护性、可读性               | 只读      | deepseek-v4-pro   | ❌ 禁止编辑 | 引用精确文件:行号              |
+| **docs-writer**  | 知识库工程师：API 文档、架构文档、报告等             | `docs/`   | deepseek-v4-flash | ✅ 文档编辑 | 上下文自包含、YAML frontmatter |
 
 ## 3. 核心工作流
 
@@ -58,9 +58,16 @@ graph TD
     Assign --> BE[backend-dev<br/>server/]
     Assign --> AI[ai-dev<br/>ai/]
 
-    FE --> Test[tester 测试验收]
-    BE --> Test
-    AI --> Test
+    FE --> Gate{Gate 工程门禁<br/>lint+typecheck+build}
+    BE --> Gate
+    AI --> Gate
+
+    Gate -->|失败| GateFail([退回修复])
+    GateFail --> FE
+    GateFail --> BE
+    GateFail --> AI
+
+    Gate -->|通过| Test[tester 测试验收]
 
     Test -->|失败| TestFail{tester 分析}
     TestFail -->|退回修复| FE
@@ -89,7 +96,9 @@ graph TD
 ```mermaid
 graph LR
     Task[单层需求] --> Dev[对应 dev agent]
-    Dev --> Tester[tester]
+    Dev --> Gate{Gate 工程门禁<br/>lint+typecheck+build}
+    Gate -->|失败| Dev
+    Gate -->|通过| Tester[tester]
     Tester -->|通过| Verifier[verifier]
     Tester -->|失败| Dev
     Verifier -->|通过| Reviewer[reviewer]
@@ -117,11 +126,11 @@ graph LR
 
 ### 4.1 coordinator（调度协调器）
 
-| 项目 | 说明 |
-|------|------|
-| **触发条件** | 用户直接调用或 `dev-cycle` 命令触发 |
-| **输入** | 用户需求描述 |
-| **输出** | 子 Agent 执行结果汇总报告 |
+| 项目         | 说明                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------- |
+| **触发条件** | 用户直接调用或 `dev-cycle` 命令触发                                                         |
+| **输入**     | 用户需求描述                                                                                |
+| **输出**     | 子 Agent 执行结果汇总报告                                                                   |
 | **可用技能** | prompt-engineering, executing-plans, finishing-a-development-branch, requesting-code-review |
 
 **工作步骤**：
@@ -137,23 +146,23 @@ graph LR
 
 **派发规则**：
 
-| 目标 Agent | 派发条件 |
-|-----------|---------|
-| planner | 需求不清晰，需要先分析 |
-| frontend-dev | 变更涉及 `client/` |
-| backend-dev | 变更涉及 `server/` |
-| ai-dev | 变更涉及 `ai/` |
-| tester | dev agent 完成后**必须**派发 |
-| reviewer | tester 通过后**必须**派发 |
-| docs-writer | 公开接口变更时派发 |
+| 目标 Agent   | 派发条件                     |
+| ------------ | ---------------------------- |
+| planner      | 需求不清晰，需要先分析       |
+| frontend-dev | 变更涉及 `client/`           |
+| backend-dev  | 变更涉及 `server/`           |
+| ai-dev       | 变更涉及 `ai/`               |
+| tester       | dev agent 完成后**必须**派发 |
+| reviewer     | tester 通过后**必须**派发    |
+| docs-writer  | 公开接口变更时派发           |
 
 ### 4.2 planner（需求分析）
 
-| 项目 | 说明 |
-|------|------|
-| **触发条件** | coordinator 派发或 `plan-task` 命令 |
-| **输入** | 用户需求 / PRD |
-| **输出** | 结构化实施计划（Markdown） |
+| 项目         | 说明                                                    |
+| ------------ | ------------------------------------------------------- |
+| **触发条件** | coordinator 派发或 `plan-task` 命令                     |
+| **输入**     | 用户需求 / PRD                                          |
+| **输出**     | 结构化实施计划（Markdown）                              |
 | **可用技能** | prd, brainstorming, writing-plans, trip-task-decomposer |
 
 **工作步骤**：
@@ -168,19 +177,23 @@ graph LR
 
 ```markdown
 ## 实施计划
+
 ### 阶段 1：数据库与 API
+
 - [ ] 添加行程表迁移 | 负责人：backend-dev | 涉及文件：prisma/schema.prisma
+
 ### 阶段 2：前端页面
+
 - [ ] 创建行程列表页 | 负责人：frontend-dev | 涉及文件：views/TripList.vue
 ```
 
 ### 4.3 frontend-dev（前端开发）
 
-| 项目 | 说明 |
-|------|------|
-| **触发条件** | coordinator 派发，变更涉及 `client/` |
-| **输入** | 功能需求 / 实施计划相关任务 |
-| **输出** | 实现的 Vue 组件、测试、路由配置 |
+| 项目         | 说明                                                                                                                                                |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **触发条件** | coordinator 派发，变更涉及 `client/`                                                                                                                |
+| **输入**     | 功能需求 / 实施计划相关任务                                                                                                                         |
+| **输出**     | 实现的 Vue 组件、测试、路由配置                                                                                                                     |
 | **可用技能** | vue-best-practices, vue-patterns, vue-pinia-best-practices, vue-router-best-practices, tailwindcss, frontend-design, performance-optimization, pnpm |
 
 **工作步骤**：
@@ -199,11 +212,11 @@ graph LR
 
 ### 4.4 backend-dev（后端开发）
 
-| 项目 | 说明 |
-|------|------|
-| **触发条件** | coordinator 派发，变更涉及 `server/` |
-| **输入** | 功能需求 / 实施计划相关任务 |
-| **输出** | 实现的 NestJS 模块、API 端点、测试 |
+| 项目         | 说明                                                                                                                                                                        |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **触发条件** | coordinator 派发，变更涉及 `server/`                                                                                                                                        |
+| **输入**     | 功能需求 / 实施计划相关任务                                                                                                                                                 |
+| **输出**     | 实现的 NestJS 模块、API 端点、测试                                                                                                                                          |
 | **可用技能** | nestjs-patterns, backend-patterns, prisma-patterns, postgresql-optimization, postgres-best-practices, redis-patterns, pgvector-semantic-search, zod-validation-expert, pnpm |
 
 **工作步骤**：
@@ -223,11 +236,11 @@ graph LR
 
 ### 4.5 ai-dev（AI Agent 开发）
 
-| 项目 | 说明 |
-|------|------|
-| **触发条件** | coordinator 派发，变更涉及 `ai/` |
-| **输入** | Agent 功能需求 / 实施计划相关任务 |
-| **输出** | 实现的 deepAgent / LangGraph Agent 工作流 |
+| 项目         | 说明                                                                                                                                                                                                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **触发条件** | coordinator 派发，变更涉及 `ai/`                                                                                                                                                                                                                             |
+| **输入**     | Agent 功能需求 / 实施计划相关任务                                                                                                                                                                                                                            |
+| **输出**     | 实现的 deepAgent / LangGraph Agent 工作流                                                                                                                                                                                                                    |
 | **可用技能** | ai-product, deep-agents, langgraph, langsmith, rag-engineer, rag-implementation, prompt-engineering, prompt-engineering-patterns, prompt-optimizer, context-engineering, harness-engineering, pgvector-semantic-search, verification-before-completion, pnpm |
 
 **参考文档**：
@@ -277,15 +290,18 @@ graph LR
 
 ### 4.6 tester（测试验收）
 
-| 项目 | 说明 |
-|------|------|
-| **触发条件** | dev agent 完成后，coordinator 强制派发 |
-| **输入** | dev agent 的变更集 |
-| **输出** | 测试报告（通过/失败 + 覆盖率） |
+| 项目         | 说明                                                                   |
+| ------------ | ---------------------------------------------------------------------- |
+| **触发条件** | dev agent 完成后，coordinator 强制派发                                 |
+| **输入**     | dev agent 的变更集                                                     |
+| **输出**     | 测试报告（通过/失败 + 覆盖率）                                         |
 | **可用技能** | tdd-workflow, systematic-debugging, debugging-and-error-recovery, pnpm |
 
 **工作步骤**：
 
+0. **工程门禁检查**（必须在测试前执行）：
+   - 在项目根目录执行 `pnpm check`（= `pnpm lint && pnpm typecheck && pnpm -r build`）
+   - 任一失败 → 退回对应 dev agent 修复，不继续测试
 1. 识别变更的包（client/server/ai）
 2. 运行对应包的完整测试套件：
    - 前端：`pnpm --filter client run test`
@@ -299,7 +315,9 @@ graph LR
 
 ```markdown
 ## 测试报告
+
 ### 包：client
+
 - 测试：24 通过，0 失败
 - 覆盖率：行 87.2%，分支 83.1%，函数 91.5%
 - 结论：通过
@@ -307,11 +325,11 @@ graph LR
 
 ### 4.7 verifier（对抗性测试）
 
-| 项目 | 说明 |
-|------|------|
-| **触发条件** | tester 通过后，coordinator 强制派发 |
-| **输入** | dev agent 的变更集 |
-| **输出** | 对抗性测试报告（漏洞/边界/攻击面） |
+| 项目         | 说明                                                         |
+| ------------ | ------------------------------------------------------------ |
+| **触发条件** | tester 通过后，coordinator 强制派发                          |
+| **输入**     | dev agent 的变更集                                           |
+| **输出**     | 对抗性测试报告（漏洞/边界/攻击面）                           |
 | **可用技能** | code-reviewer, systematic-debugging, typescript-expert, pnpm |
 
 **工作步骤**：
@@ -327,51 +345,59 @@ graph LR
 
 ```markdown
 ## 对抗性测试报告
+
 ### 审查文件：[列表]
+
 ### 发现的问题：
+
 - [CRIT-高] 可直接利用的漏洞 | 文件:行号
 - [CRIT-中] 需特定条件触发的缺陷 | 文件:行号
 - [CRIT-低] 安全加固建议 | 文件:行号
+
 ### 结论：安全 / 需修复 / 有风险
 ```
 
 ### 4.8 reviewer（代码审查）
 
-| 项目 | 说明 |
-|------|------|
-| **触发条件** | verifier 通过后，coordinator 强制派发 |
-| **输入** | dev agent 的变更文件 |
-| **输出** | 代码审查报告 |
+| 项目         | 说明                                                          |
+| ------------ | ------------------------------------------------------------- |
+| **触发条件** | verifier 通过后，coordinator 强制派发                         |
+| **输入**     | dev agent 的变更文件                                          |
+| **输出**     | 代码审查报告                                                  |
 | **可用技能** | code-reviewer, typescript-expert, receiving-code-review, pnpm |
 
 **审查维度**：
 
-| 维度 | 检查项 |
-|------|--------|
-| 安全性 | PII 泄漏、SQL 注入、JWT 校验、输入验证 |
-| 性能 | N+1 查询、懒加载、数据库索引、LLM 缓存 |
+| 维度     | 检查项                                           |
+| -------- | ------------------------------------------------ |
+| 安全性   | PII 泄漏、SQL 注入、JWT 校验、输入验证           |
+| 性能     | N+1 查询、懒加载、数据库索引、LLM 缓存           |
 | 可维护性 | 编码约定遵循、重复逻辑提取、错误处理一致、配置化 |
-| 测试 | 代码路径覆盖、测试有意义、边界情况 |
+| 测试     | 代码路径覆盖、测试有意义、边界情况               |
 
 **报告格式**：
 
 ```markdown
 ## 代码审查
+
 ### 审查文件：[列表]
+
 ### 问题清单：
+
 - [SEV-高] 问题描述 | 文件:行号
 - [SEV-中] 问题描述 | 文件:行号
 - [SEV-低] 建议 | 文件:行号
+
 ### 结论：通过 / 需修改 / 拒绝
 ```
 
 ### 4.9 docs-writer（知识库工程师）
 
-| 项目 | 说明 |
-|------|------|
-| **触发条件** | 每次 dev-cycle 完成后强制执行 |
-| **输入** | 变更摘要、代码变更集 |
-| **输出** | 更新后的文档文件 |
+| 项目         | 说明                                    |
+| ------------ | --------------------------------------- |
+| **触发条件** | 每次 dev-cycle 完成后强制执行           |
+| **输入**     | 变更摘要、代码变更集                    |
+| **输出**     | 更新后的文档文件                        |
 | **可用技能** | docs-write, prompt-engineering-patterns |
 
 **工作步骤**：
@@ -420,39 +446,41 @@ stateDiagram-v2
     FailReport --> [*]: 向用户报告失败摘要
 ```
 
-| 失败场景 | 处理方式 | 重试上限 |
-|---------|---------|---------|
-| tester 报告失败 | 退回 dev agent 修复 | 2 次 |
-| 覆盖率低于 80% | 退回 dev agent 补充测试 | 2 次 |
-| verifier 报告 CRIT-高 问题 | 退回 dev agent 修复 | 2 次 |
-| reviewer 结论"拒绝" | 退回 dev agent 修复 | 2 次 |
-| 第 3 次仍失败 | 向用户报告失败摘要和根因 | — |
+| 失败场景                             | 处理方式                 | 重试上限 |
+| ------------------------------------ | ------------------------ | -------- |
+| 工程门禁（lint/typecheck/build）失败 | 退回 dev agent 修复      | 2 次     |
+| tester 报告失败                      | 退回 dev agent 修复      | 2 次     |
+| 覆盖率低于 80%                       | 退回 dev agent 补充测试  | 2 次     |
+| verifier 报告 CRIT-高 问题           | 退回 dev agent 修复      | 2 次     |
+| reviewer 结论"拒绝"                  | 退回 dev agent 修复      | 2 次     |
+| 第 3 次仍失败                        | 向用户报告失败摘要和根因 | —        |
 
 ## 6. 自定义命令映射
 
-| 命令 | 派发目标 | 触发场景 | 说明 |
-|------|---------|---------|------|
-| `dev-cycle` | coordinator | 日常开发 | 完整开发流水线：dev → tester → verifier → reviewer → docs-writer |
-| `plan-task` | planner | 需求不清晰 | 分析需求，输出实施计划 |
-| `review-code` | reviewer | 代码审查 | 只读审查指定代码 |
-| `add-dep` | build | 新增依赖 | 用 Context7 查最新版本后安装 |
-| `compress-memory` | 脚本 | 记忆库接近上限 | 导出 → 聚类 → 合并 → 导入 → 清理 |
+| 命令              | 派发目标    | 触发场景       | 说明                                                                    |
+| ----------------- | ----------- | -------------- | ----------------------------------------------------------------------- |
+| `dev-cycle`       | coordinator | 日常开发       | 完整开发流水线：dev → gate → tester → verifier → reviewer → docs-writer |
+| `check-gates`     | 直执行      | 工程门禁       | 执行 `pnpm check`（lint + typecheck + build），手动确认门禁状态         |
+| `plan-task`       | planner     | 需求不清晰     | 分析需求，输出实施计划                                                  |
+| `review-code`     | reviewer    | 代码审查       | 只读审查指定代码                                                        |
+| `add-dep`         | build       | 新增依赖       | 用 Context7 查最新版本后安装                                            |
+| `compress-memory` | 脚本        | 记忆库接近上限 | 导出 → 聚类 → 合并 → 导入 → 清理                                        |
 
 ## 7. 跨 Agent 协作规范
 
 ### 7.1 目录边界
 
-| Agent | 可读 | 可写 |
-|-------|------|------|
-| coordinator | 全项目 | ❌ |
-| planner | 全项目 | ❌ |
+| Agent        | 可读               | 可写      |
+| ------------ | ------------------ | --------- |
+| coordinator  | 全项目             | ❌        |
+| planner      | 全项目             | ❌        |
 | frontend-dev | `client/`, `docs/` | `client/` |
-| backend-dev | `server/`, `docs/` | `server/` |
-| ai-dev | `ai/`, `docs/` | `ai/` |
-| tester | 全项目 | ❌ |
-| verifier | 全项目 | ❌ |
-| reviewer | 全项目 | ❌ |
-| docs-writer | 全项目 | `docs/` |
+| backend-dev  | `server/`, `docs/` | `server/` |
+| ai-dev       | `ai/`, `docs/`     | `ai/`     |
+| tester       | 全项目             | ❌        |
+| verifier     | 全项目             | ❌        |
+| reviewer     | 全项目             | ❌        |
+| docs-writer  | 全项目             | `docs/`   |
 
 ### 7.2 信息传递格式
 
@@ -476,11 +504,11 @@ stateDiagram-v2
 
 ### 7.4 测试标准
 
-| 层 | 测试框架 | 覆盖要求 |
-|----|---------|---------|
-| 前端 (client) | Vitest + Playwright | 正常路径 + 错误状态 + 加载状态 + 边界情况 |
-| 后端 (server) | Vitest | 成功路径 + 400/401/403/404 |
-| AI (ai) | Vitest | Agent 路由 + 工具调用 + RAG 检索 + 输出格式化 |
+| 层            | 测试框架            | 覆盖要求                                      |
+| ------------- | ------------------- | --------------------------------------------- |
+| 前端 (client) | Vitest + Playwright | 正常路径 + 错误状态 + 加载状态 + 边界情况     |
+| 后端 (server) | Vitest              | 成功路径 + 400/401/403/404                    |
+| AI (ai)       | Vitest              | Agent 路由 + 工具调用 + RAG 检索 + 输出格式化 |
 
 覆盖率阈值：分支 >= 80%、函数 >= 80%、行 >= 80%、语句 >= 80%
 

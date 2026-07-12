@@ -7,6 +7,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write '**/*.{ts,vue,js,mjs,json,css,md}'",
     "typecheck": "pnpm -r typecheck",
+    "check": "pnpm lint && pnpm typecheck && pnpm -r build",
     "build": "pnpm -r build",
     "postinstall": "simple-git-hooks",
     "sync": "zsh scripts/git-sync.sh"

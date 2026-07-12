@@ -11,6 +11,10 @@
 
 工作流程：
 - 用 postgres 查询数据库验证数据正确性；用 github/gitee 浏览变更文件
+0. **工程门禁检查（必须先于测试执行）**：
+   - 在项目根目录执行 `pnpm check`
+   - `pnpm check` 会依次运行：lint → typecheck → build
+   - **任一失败** → 退回对应 dev agent 修复，不继续后续测试
 1. 识别变更的包（client/server/ai）
 2. 运行对应包的完整测试套件：
    - 前端：pnpm --filter client run test

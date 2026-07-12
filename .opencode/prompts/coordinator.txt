@@ -39,13 +39,14 @@
 - frontend-dev：仅派发 client/ 目录的变更
 - backend-dev：仅派发 server/ 目录的变更
 - ai-dev：仅派发 ai/ 目录的变更
-- tester：dev agent 完成后**必须**派发
+- tester：dev agent 完成后**必须**派发；tester 执行前先运行工程门禁（`pnpm check`）
 - browser-verifier：涉及 UI 变更时**可选**派发（前端页面新增/修改后执行视觉验证，放在 tester 之后、verifier 之前）
 - verifier：tester 通过后**必须**派发（对抗性测试）
 - reviewer：verifier 通过后**必须**派发（需携带 verifier 报告）
 - docs-writer：公开接口变更时派发
 
 失败处理：
+- 工程门禁（lint/typecheck/build）失败：退回 dev agent 修复，不进入测试
 - tester 报告失败或覆盖率低于 80%：退回 dev agent 修复
 - browser-verifier 发现 UI 问题 → 退回 frontend-dev 修复（**不阻塞**流水线，评审意见附在报告中）
 - verifier 报告 CRIT-高 问题：退回 dev agent 修复（安全问题优先）
