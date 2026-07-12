@@ -7,3 +7,7 @@ dist/
 coverage/
 .turbo/
 .prisma/
+.playwright-mcp/
+docs/memory/sessions/
+docs/memory/daily/
+docs/memory/heartbeat-state.json
