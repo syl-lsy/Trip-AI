@@ -1,7 +1,13 @@
-export { IntentRouter } from './intent-router/router'
-export { TravelPlanner } from './agents/travel-planner'
-export { TravelModifier } from './agents/travel-modifier'
-export { KnowledgeQA } from './agents/knowledge-qa'
+export {
+  invokeAgent,
+  invokePlanner,
+  invokeModifier,
+  invokeQA,
+  streamAgent,
+  streamPlanner,
+  streamModifier,
+  streamQA,
+} from './agent'
 export type {
   UserRequirements,
   IntentResult,

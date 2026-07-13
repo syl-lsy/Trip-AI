@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 
-export type SSECallback = (event: { type: string; data: unknown }) => void
+export type SSEEvent = { type: string; data: unknown }
+export type SSECallback = (event: SSEEvent) => void
 
 export interface UserRequirements {
   destination: string
@@ -23,30 +24,8 @@ export class AiService {
 
   async chat(message: string, onEvent: SSECallback) {
     try {
-      const { IntentRouter, TravelPlanner, KnowledgeQA } = await import('@trip/ai')
-
-      const router = new IntentRouter()
-      const result = await router.classify(message)
-
-      if (result.intent === 'plan') {
-        const planner = new TravelPlanner()
-        const requirements: UserRequirements = {
-          destination: result.entities?.destination || '三亚',
-          startDate: result.entities?.startDate || new Date().toISOString().split('T')[0],
-          endDate: result.entities?.endDate || '',
-          adults: result.entities?.adults || 2,
-          children: result.entities?.children || 1,
-          childAge: result.entities?.childAge || 5,
-          pace: result.entities?.pace || 'moderate',
-          budget: result.entities?.budget || 10000,
-        }
-        await planner.plan(requirements, onEvent)
-      } else if (result.intent === 'qa') {
-        const qa = new KnowledgeQA()
-        await qa.answer(message, onEvent)
-      } else {
-        onEvent({ type: 'message', data: { content: '请先创建一个行程，再进行修改。' } })
-      }
+      const { streamAgent } = await import('@trip/ai')
+      await streamAgent(message, onEvent)
     } catch (error) {
       this.logger.error('AI chat error', error)
       onEvent({ type: 'error', data: { message: 'AI 服务暂时不可用，请稍后重试。' } })
@@ -55,9 +34,8 @@ export class AiService {
 
   async plan(requirements: UserRequirements, _userId: string, onEvent: SSECallback) {
     try {
-      const { TravelPlanner } = await import('@trip/ai')
-      const planner = new TravelPlanner()
-      await planner.plan(requirements, onEvent)
+      const { streamPlanner } = await import('@trip/ai')
+      await streamPlanner(JSON.stringify(requirements), onEvent)
     } catch (error) {
       this.logger.error('AI plan error', error)
       onEvent({ type: 'error', data: { message: '规划服务暂时不可用，请稍后重试。' } })
@@ -72,9 +50,8 @@ export class AiService {
         return
       }
 
-      const { TravelModifier } = await import('@trip/ai')
-      const modifier = new TravelModifier()
-      await modifier.modify(itinerary.itineraryJson as never, request, onEvent)
+      const { streamModifier } = await import('@trip/ai')
+      await streamModifier(itinerary.itineraryJson as never, request, onEvent)
     } catch (error) {
       this.logger.error('AI modify error', error)
       onEvent({ type: 'error', data: { message: '修改服务暂时不可用，请稍后重试。' } })

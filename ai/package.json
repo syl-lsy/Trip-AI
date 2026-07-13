@@ -2,7 +2,6 @@
   "name": "@trip/ai",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
@@ -18,11 +17,15 @@
     }
   },
   "dependencies": {
-    "@langchain/core": "^0.3",
-    "@langchain/langgraph": "^0.2",
-    "@langchain/openai": "^0.4"
+    "@langchain/core": "^1.2.2",
+    "@langchain/deepseek": "^1.1.5",
+    "@langchain/langgraph": "^1.4.7",
+    "deepagents": "^1.10.7",
+    "langchain": "^1.5.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/node": "^22.20.1",
     "typescript": "^5.7.3"
   }
 }

@@ -1,14 +1,8 @@
-export interface POIResult {
-  name: string
-  category: string
-  duration: string
-  price: number
-  kidFriendly: number
-  notes: string[]
-}
+import { tool } from 'langchain'
+import { z } from 'zod'
 
-export class AmapTool {
-  async searchPOI(destination: string, _keyword: string): Promise<POIResult[]> {
+export const searchPOI = tool(
+  async ({ destination }: { destination: string }) => {
     return [
       {
         name: `${destination}海滩`,
@@ -18,10 +12,21 @@ export class AmapTool {
         kidFriendly: 9,
         notes: ['适合儿童玩沙', '免费开放'],
       },
+      {
+        name: `${destination}动物园`,
+        category: '景点',
+        duration: '4小时',
+        price: 60,
+        kidFriendly: 8,
+        notes: ['有儿童互动区'],
+      },
     ]
-  }
-
-  async planRoute(_origin: string, _destination: string): Promise<Record<string, unknown>> {
-    return { distance: '300km', duration: '3h', route: [] }
-  }
-}
+  },
+  {
+    name: 'search_poi',
+    description: '查询目的地的景点/POI信息',
+    schema: z.object({
+      destination: z.string().describe('目的地城市'),
+    }),
+  },
+)

@@ -1,3 +1,6 @@
+import { tool } from 'langchain'
+import { z } from 'zod'
+
 export interface TransportOption {
   type: 'flight' | 'train' | 'driving'
   from: string
@@ -11,13 +14,13 @@ export interface TransportOption {
   source: string
 }
 
-export class TransportTool {
-  async searchFlights(from: string, to: string, date: string): Promise<TransportOption[]> {
+export const searchFlights = tool(
+  async ({ origin, destination, date }) => {
     return [
       {
-        type: 'flight',
-        from,
-        to,
+        type: 'flight' as const,
+        from: origin,
+        to: destination,
         date,
         departureTime: '08:00',
         arrivalTime: '10:30',
@@ -27,14 +30,25 @@ export class TransportTool {
         source: 'variflight',
       },
     ]
-  }
+  },
+  {
+    name: 'search_flights',
+    description: '查询航班信息，返回航班列表',
+    schema: z.object({
+      origin: z.string().describe('出发城市'),
+      destination: z.string().describe('目的城市'),
+      date: z.string().describe('出发日期 YYYY-MM-DD'),
+    }),
+  },
+)
 
-  async searchTrains(from: string, to: string, date: string): Promise<TransportOption[]> {
+export const searchTrains = tool(
+  async ({ origin, destination, date }) => {
     return [
       {
-        type: 'train',
-        from,
-        to,
+        type: 'train' as const,
+        from: origin,
+        to: destination,
         date,
         departureTime: '07:30',
         arrivalTime: '12:00',
@@ -44,5 +58,14 @@ export class TransportTool {
         source: 'train12306',
       },
     ]
-  }
-}
+  },
+  {
+    name: 'search_trains',
+    description: '查询高铁/火车信息，返回车次列表',
+    schema: z.object({
+      origin: z.string().describe('出发城市'),
+      destination: z.string().describe('目的城市'),
+      date: z.string().describe('出发日期 YYYY-MM-DD'),
+    }),
+  },
+)

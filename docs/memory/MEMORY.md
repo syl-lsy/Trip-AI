@@ -71,6 +71,19 @@ Last updated: 2026-07-09
 
 ## Auto Memory（AI 自动记录）
 
+- 2026-07-13 | config | Agent system prompts 拆分到独立文件 ai/src/prompts/：coordinator.ts / planner.ts / modifier.ts / qa.ts，应用 prompt-engineering / prompt-engineering-patterns / prompt-optimizer / prompt-library 四项技能优化。agent.ts 改为 import 外部 prompt。
+
+- 2026-07-13 | decision | itecture] Deep Agents 迁移完成：ai/src/ 从 7 个自定义类（IntentRouter/TravelPlanner/TravelModifier/KnowledgeQA）重构为 createDeepAgent + 3 个子 Agent（planner/modifier/qa）。4 个 Tool 类改为 @tool 装饰器函数。server/ai.service.ts 改为调用 invokeAgent/invokePlanner/invokeModifier。依赖升级：@langchain/core ^1.2.2、@langchain/langgraph ^1.4.7、新增 deepagents ^1.10.7 + langchain ^1.5.3 + zod。
+
+- 2026-07-13 | architecture | Deep Agents 迁移完成：ai/src/ 从 7 个自定义类（IntentRouter/TravelPlanner/TravelModifier/KnowledgeQA）重构为 createDeepAgent + 3 个子 Agent（planner/modifier/qa）。4 个 Tool 类改为 @tool 装饰器函数。server/ai.service.ts 改为调用 invokeAgent/invokePlanner/invokeModifier。依赖升级：@langchain/core ^1.2.2、@langchain/langgraph ^1.4.7、新增 deepagents ^1.10.7 + langchain ^1.5.3 + zod。
+
+- 2026-07-13 | config | opencode.json 新增 build/plan 两个 primary agent，分别使用 prompts/build.txt 和 prompts/plan.txt 作为自定义系统 prompt。build 允许 edit/bash（开发执行），plan 禁止 edit/bash（只读分析）。
+
+- 2026-07-13 | cross-session | ## 下一步
+- 2026-07-13 | cross-session | ## 下一步
+
+- 2026-07-12 | decision | Gitee 仓库已配置 GitHub 镜像同步，推送至 Gitee 后会自动同步到 GitHub。以后推送流程仅需推送 Gitee，无需再询问用户是否需要推送 GitHub
+
 - 2026-07-12 | decision | itecture] Phase 2 智能规划工作台全栈实现完成：三栏布局（PlanView fixed定位突破父容器）+ AI对话面板（ChatPanel SSE流式+ProgressSkeleton+QuickActions+KnowledgeRefCard）+ 行程可视化（TimelineCenter/DayCard/TimelineNode 节点渲染+彩色边框+Emoji图标）+ 方案对比弹窗（PlanComparison Teleport弹窗，两方案卡片）+ Itinerary CRUD（5个REST端点，按userId隔离）+ AI SSE 端点（POST /api/ai/chat/plan/modify，@Sse()+Observable，动态import @trip/ai）+ AI Agent层（IntentRouter LLM+关键词降级、TravelPlanner 顺序编排+SSE进度、TravelModifier全量重生成、KnowledgeQA桩）+ MCP工具（TransportTool/AccommodationTool/AmapTool/KnowledgeTool预设示例数据）。详见 docs/features/planning-workbench.md
 
 - 2026-07-12 | architecture | Phase 2 智能规划工作台全栈实现完成：三栏布局（PlanView fixed定位突破父容器）+ AI对话面板（ChatPanel SSE流式+ProgressSkeleton+QuickActions+KnowledgeRefCard）+ 行程可视化（TimelineCenter/DayCard/TimelineNode 节点渲染+彩色边框+Emoji图标）+ 方案对比弹窗（PlanComparison Teleport弹窗，两方案卡片）+ Itinerary CRUD（5个REST端点，按userId隔离）+ AI SSE 端点（POST /api/ai/chat/plan/modify，@Sse()+Observable，动态import @trip/ai）+ AI Agent层（IntentRouter LLM+关键词降级、TravelPlanner 顺序编排+SSE进度、TravelModifier全量重生成、KnowledgeQA桩）+ MCP工具（TransportTool/AccommodationTool/AmapTool/KnowledgeTool预设示例数据）。详见 docs/features/planning-workbench.md

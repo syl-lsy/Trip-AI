@@ -62,6 +62,24 @@
     }
   },
   "agent": {
+    "build": {
+      "description": "开发执行 — 项目开发与编码，可调用所有工具",
+      "mode": "primary",
+      "model": "opencode-go/deepseek-v4-flash",
+      "temperature": 0.3,
+      "top_p": 0.4,
+      "prompt": "{file:prompts/build.txt}",
+      "permission": { "edit": "allow", "bash": "allow" }
+    },
+    "plan": {
+      "description": "规划分析 — 只读分析代码结构和需求，不做修改",
+      "mode": "primary",
+      "model": "opencode-go/deepseek-v4-flash",
+      "temperature": 0.2,
+      "top_p": 0.2,
+      "prompt": "{file:prompts/plan.txt}",
+      "permission": { "edit": "deny", "bash": "deny" }
+    },
     "coordinator": {
       "description": "调度协调器 — 需求拆解、子任务派发、结果汇总",
       "mode": "subagent",

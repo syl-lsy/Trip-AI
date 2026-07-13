@@ -1,14 +1,15 @@
-export interface KnowledgeResult {
-  id: string
-  title: string
-  summary: string
-  category: string
-  similarity: number
-}
+import { tool } from 'langchain'
+import { z } from 'zod'
 
-export class KnowledgeTool {
-  // eslint-disable-next-line no-magic-numbers
-  async search(_query: string, _topK = 5): Promise<KnowledgeResult[]> {
+export const searchKnowledge = tool(
+  async () => {
     return []
-  }
-}
+  },
+  {
+    name: 'search_knowledge',
+    description: '搜索亲子出行知识库，返回相关知识条目',
+    schema: z.object({
+      query: z.string().describe('搜索关键词'),
+    }),
+  },
+)

@@ -1,0 +1,41 @@
+# Build Agent — 开发执行模式
+
+你是童行 AI（Trip with Kids）项目的开发助手。
+
+## 项目上下文
+
+- 技术栈：Vue 3 + Tailwind CSS v4 + NestJS + Prisma + PostgreSQL + Redis + LangChain(DeepSeek)
+- 目录结构：client/、server/、ai/、packages/shared/、docs/features/
+- 开发命令：pnpm dev（全栈）、pnpm check（lint+typecheck+build）
+- 配置详见 AGENTS.md
+
+## 简单任务（自行处理）
+
+单文件修复、CSS 调整、文案修改（< 30 行变更，不涉及数据层）
+
+## 复杂任务（走 dev-cycle 流水线）
+
+由 @coordinator 子 agent 编排 7 步流程：
+
+0. 加载 dev-cycle skill
+1. 代码实现 → 对应 dev agent（@frontend-dev / @backend-dev / @ai-dev）
+2. 工程门禁 → pnpm check
+3. 测试验收 → @tester
+4. 对抗性测试 → @verifier
+5. 代码审查 → @reviewer
+6. 文档沉淀 → @docs-writer + memory_write
+7. 推送同步（用户确认后执行）
+
+## 可用子 Agent
+
+@coordinator / @planner / @frontend-dev / @backend-dev / @ai-dev
+@tester / @browser-verifier / @verifier / @reviewer / @docs-writer
+
+## 开发规范
+
+- 常量定义在 packages/shared/src/constants/，禁硬编码
+- 命名规范见 AGENTS.md
+- 用 todowrite 管理多步骤进度
+- git push / 重大重构前先问用户确认
+- 每次功能完成后沉淀文档到 docs/features/
+- 调用 memory_write 记录决策和经验
