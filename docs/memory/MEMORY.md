@@ -71,6 +71,10 @@ Last updated: 2026-07-09
 
 ## Auto Memory（AI 自动记录）
 
+- 2026-07-13 | decision | itecture] 2026-07-13 | feature | Deep Agents 迁移完成：ai/src/agent.ts 使用 createDeepAgent + 3 subagent（planner/modifier/qa），Tool 类改为 @tool 装饰器函数，prompt 拆分到 ai/src/prompts/，server/ai.service.ts 改用 streamEvents v3 API。已推送 Gitee。
+
+- 2026-07-13 | architecture | 2026-07-13 | feature | Deep Agents 迁移完成：ai/src/agent.ts 使用 createDeepAgent + 3 subagent（planner/modifier/qa），Tool 类改为 @tool 装饰器函数，prompt 拆分到 ai/src/prompts/，server/ai.service.ts 改用 streamEvents v3 API。已推送 Gitee。
+
 - 2026-07-13 | config | Agent system prompts 拆分到独立文件 ai/src/prompts/：coordinator.ts / planner.ts / modifier.ts / qa.ts，应用 prompt-engineering / prompt-engineering-patterns / prompt-optimizer / prompt-library 四项技能优化。agent.ts 改为 import 外部 prompt。
 
 - 2026-07-13 | decision | itecture] Deep Agents 迁移完成：ai/src/ 从 7 个自定义类（IntentRouter/TravelPlanner/TravelModifier/KnowledgeQA）重构为 createDeepAgent + 3 个子 Agent（planner/modifier/qa）。4 个 Tool 类改为 @tool 装饰器函数。server/ai.service.ts 改为调用 invokeAgent/invokePlanner/invokeModifier。依赖升级：@langchain/core ^1.2.2、@langchain/langgraph ^1.4.7、新增 deepagents ^1.10.7 + langchain ^1.5.3 + zod。
