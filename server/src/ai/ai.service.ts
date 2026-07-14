@@ -1,20 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
+import { PlanRequirementsDto } from './dto/plan-requirements.dto'
 
 export type SSEEvent = { type: string; data: unknown }
 export type SSECallback = (event: SSEEvent) => void
 
-export interface UserRequirements {
-  destination: string
-  origin?: string
-  startDate: string
-  endDate: string
-  adults: number
-  children: number
-  childAge: number
-  pace: 'relaxed' | 'moderate' | 'intense'
-  budget: number
-}
+export type UserRequirements = PlanRequirementsDto
 
 @Injectable()
 export class AiService {

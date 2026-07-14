@@ -7,4 +7,5 @@ export const DURATION = {
 
 export const TIMEOUT = {
   DEFAULT_API: 15000,
+  SSE: 120000,
 } as const

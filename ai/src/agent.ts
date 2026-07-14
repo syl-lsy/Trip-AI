@@ -208,7 +208,9 @@ async function streamWithEvents(
     const state = await run.output
     const blocks = getContentBlocks(state)
 
-    // Complete all pending progress steps before emitting result
+    // Emit running for steps that may not have been triggered by tools
+    emitProgress(onEvent, 'comparePrice')
+    // Complete all tool-related steps before emitting result
     finalizeProgress(onEvent, ['searchTransport', 'comparePrice', 'searchPoiHotel'])
 
     // Emit step 5 (generating)

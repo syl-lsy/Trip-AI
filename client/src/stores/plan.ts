@@ -351,6 +351,7 @@ export const usePlanStore = defineStore('plan', () => {
         }
       },
       () => {
+        if (!guardGenId(genId)) return
         isLoading.value = false
         sseError.value = '连接失败，请重试'
       },

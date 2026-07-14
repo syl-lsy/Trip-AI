@@ -1,5 +1,12 @@
 import { post } from './client'
-import { ROUTES, API_PREFIX, STORAGE_KEYS, SSE_EVENTS, SSE_PREFIX_LENGTH } from '@trip/shared'
+import {
+  ROUTES,
+  API_PREFIX,
+  STORAGE_KEYS,
+  SSE_EVENTS,
+  SSE_PREFIX_LENGTH,
+  TIMEOUT,
+} from '@trip/shared'
 
 export type SseEvent =
   | {
@@ -35,22 +42,40 @@ function createSseFetch(
     headers['Authorization'] = `Bearer ${token}`
   }
 
+  // Timeout after TIMEOUT.SSE ms
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT.SSE)
+  const combinedSignal = signal ? combineSignals(signal, controller.signal) : controller.signal
+
+  // Line buffer for cross-chunk SSE rows
+  let lineBuffer = ''
+
   fetch(url, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
-    signal,
+    signal: combinedSignal,
   })
     .then(async (response) => {
       const reader = response.body?.getReader()
-      if (!reader) return onComplete?.()
+      if (!reader) {
+        clearTimeout(timeoutId)
+        return onComplete?.()
+      }
       const decoder = new TextDecoder()
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
         const chunk = decoder.decode(value)
-        const lines = chunk.split('\n').filter((l) => l.startsWith('data: '))
+
+        // Append to buffer and split on newlines
+        lineBuffer += chunk
+        const lines = lineBuffer.split('\n')
+        // Keep the last (possibly incomplete) line in the buffer
+        lineBuffer = lines.pop() ?? ''
+
         for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
           try {
             const event = JSON.parse(line.slice(SSE_PREFIX_LENGTH)) as SseEvent
             onEvent(event)
@@ -59,11 +84,33 @@ function createSseFetch(
           }
         }
       }
+
+      // Process any remaining data in buffer
+      if (lineBuffer.startsWith('data: ')) {
+        try {
+          const event = JSON.parse(lineBuffer.slice(SSE_PREFIX_LENGTH)) as SseEvent
+          onEvent(event)
+        } catch {
+          // skip
+        }
+      }
+
+      clearTimeout(timeoutId)
       onComplete?.()
     })
     .catch((err) => {
+      clearTimeout(timeoutId)
       if (err.name !== 'AbortError') onError?.(err)
     })
+}
+
+// Combine two AbortSignals into one
+function combineSignals(s1: AbortSignal, s2: AbortSignal): AbortSignal {
+  const controller = new AbortController()
+  const abort = () => controller.abort()
+  s1.addEventListener('abort', abort)
+  s2.addEventListener('abort', abort)
+  return controller.signal
 }
 
 export const planApi = {
