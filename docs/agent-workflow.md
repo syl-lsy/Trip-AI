@@ -67,25 +67,15 @@ graph TD
     GateFail --> BE
     GateFail --> AI
 
-    Gate -->|通过| Test[tester 测试验收]
+    Gate -->|通过| AutoVerify{🔄 自动排查<br/>reviewer + verifier}
+    AutoVerify -->|发现 N 个问题| Fix_A[修复 Round 1]
+    Fix_A --> Gate
+    AutoVerify -->|0 问题 或已修复| Round2[排查 Round 2<br/>reviewer + verifier]
+    Round2 -->|发现新问题| Fix_B[修复 Round 2]
+    Fix_B --> Gate
+    Round2 -->|连续 2 轮 0 新问题| Pass([✅ 排查通过])
 
-    Test -->|失败| TestFail{tester 分析}
-    TestFail -->|退回修复| FE
-    TestFail -->|退回修复| BE
-    TestFail -->|退回修复| AI
-
-    Test -->|通过| Verif[verifier 对抗性测试]
-    Verif -->|通过| Review[reviewer 代码审查]
-    Verif -->|CRIT-高 问题| VerifFail{退回修复}
-    VerifFail --> FE
-    VerifFail --> BE
-    VerifFail --> AI
-    Review -->|拒绝| ReviewFail{reviewer 分析}
-    ReviewFail -->|退回修复| FE
-    ReviewFail -->|退回修复| BE
-    ReviewFail -->|退回修复| AI
-
-    Review -->|通过| Docs[docs-writer 文档更新]
+    Pass --> Docs[docs-writer 文档更新]
     Docs --> Push{推送?}
     Push -->|是| Sync[同步 GitHub + Gitee]
     Push -->|否| Done([完成报告])
