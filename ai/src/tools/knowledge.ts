@@ -2,7 +2,7 @@ import { tool } from 'langchain'
 import { z } from 'zod'
 
 export const searchKnowledge = tool(
-  async () => {
+  async ({ query: _query }: { query: string }) => {
     return []
   },
   {

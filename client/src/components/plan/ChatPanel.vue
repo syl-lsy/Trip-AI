@@ -4,6 +4,8 @@ import { usePlanStore } from '@/stores/plan'
 import ProgressSkeleton from './ProgressSkeleton.vue'
 import QuickActions from './QuickActions.vue'
 import KnowledgeRefCard from './KnowledgeRefCard.vue'
+import ThinkingSection from '../chat/ThinkingSection.vue'
+import ToolCallSection from '../chat/ToolCallSection.vue'
 
 const store = usePlanStore()
 const inputMessage = ref('')
@@ -35,14 +37,14 @@ function handleKeydown(e: { key: string; shiftKey: boolean; preventDefault: () =
   <aside class="w-96 bg-white border-l border-gray-200 flex flex-col">
     <div class="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
       <div
-        class="w-10 h-10 rounded-full bg-[#4A90D9]/10 flex items-center justify-center flex-shrink-0 text-lg"
+        class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-lg"
       >
         🤖
       </div>
       <div class="flex-1 min-w-0">
         <div class="text-sm font-semibold text-gray-900">童行规划师</div>
         <div class="flex items-center gap-1.5 text-xs text-gray-400">
-          <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
+          <span class="w-1.5 h-1.5 rounded-full bg-success inline-block" />
           <span>在线</span>
         </div>
       </div>
@@ -54,7 +56,7 @@ function handleKeydown(e: { key: string; shiftKey: boolean; preventDefault: () =
         class="flex flex-col items-center justify-center h-full text-center px-4"
       >
         <div
-          class="w-14 h-14 rounded-full bg-[#4A90D9]/10 flex items-center justify-center text-2xl mb-3"
+          class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-2xl mb-3"
         >
           🤖
         </div>
@@ -69,23 +71,33 @@ function handleKeydown(e: { key: string; shiftKey: boolean; preventDefault: () =
         class="flex"
         :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
       >
-        <div
-          class="max-w-[85%] px-4 py-2.5 text-sm leading-relaxed"
-          :class="
-            msg.role === 'user'
-              ? 'bg-[#4A90D9] text-white rounded-2xl rounded-br-sm'
-              : 'bg-gray-100 text-gray-800 rounded-2xl rounded-bl-sm'
-          "
-        >
-          {{ msg.content }}
-          <div v-if="msg.role === 'assistant' && msg.knowledgeRefs?.length" class="mt-2 space-y-1">
+        <div v-if="msg.role === 'assistant'" class="max-w-[85%] space-y-2">
+          <div v-if="msg.reasoning" class="w-full">
+            <ThinkingSection :reasoning="msg.reasoning" />
+          </div>
+          <div v-if="msg.toolCalls?.length" class="w-full">
+            <ToolCallSection :tools="msg.toolCalls" />
+          </div>
+          <div
+            v-if="msg.content"
+            class="px-4 py-2.5 text-sm leading-relaxed bg-gray-100 text-gray-800 rounded-2xl rounded-bl-sm"
+          >
+            {{ msg.content }}
+          </div>
+          <div v-if="msg.knowledgeRefs?.length" class="space-y-1">
             <KnowledgeRefCard v-for="ref in msg.knowledgeRefs" :key="ref.id" v-bind="ref" />
           </div>
+        </div>
+        <div
+          v-else
+          class="max-w-[85%] px-4 py-2.5 text-sm leading-relaxed bg-primary text-white rounded-2xl rounded-br-sm"
+        >
+          {{ msg.content }}
         </div>
       </div>
 
       <div v-if="store.sseError" class="flex justify-center">
-        <div class="text-xs text-[#EF4444] bg-red-50 px-3 py-1.5 rounded-lg">
+        <div class="text-xs text-danger bg-red-50 px-3 py-1.5 rounded-lg">
           {{ store.sseError }}
         </div>
       </div>
@@ -99,11 +111,11 @@ function handleKeydown(e: { key: string; shiftKey: boolean; preventDefault: () =
           v-model="inputMessage"
           rows="1"
           placeholder="输入你的需求..."
-          class="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#4A90D9]/40 focus:ring-1 focus:ring-[#4A90D9]/20 transition-colors"
+          class="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-colors"
           @keydown="handleKeydown"
         />
         <button
-          class="w-9 h-9 flex items-center justify-center rounded-full bg-[#4A90D9] text-white text-sm flex-shrink-0 hover:bg-[#4A90D9]/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          class="w-9 h-9 flex items-center justify-center rounded-full bg-primary text-white text-sm flex-shrink-0 hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           :disabled="!inputMessage.trim() || store.isLoading"
           @click="sendMessage()"
         >

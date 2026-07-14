@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { usePlanStore } from '@/stores/plan'
-import { planApi } from '@/api/plan'
-import type { ChatMessage } from '@/stores/plan'
 import DayCard from './DayCard.vue'
 
 const store = usePlanStore()
@@ -16,22 +14,8 @@ const LEGEND_ITEMS = [
   { emoji: '😴', label: '休息' },
 ]
 
-async function sendExample(content: string) {
-  store.addMessage({ role: 'user', content })
-  store.isLoading = true
-  store.sseError = null
-  try {
-    await planApi.chat(content)
-    const reply: ChatMessage = {
-      role: 'assistant',
-      content: '收到你的需求！我正在为你规划行程...（后端待实现）',
-    }
-    store.addMessage(reply)
-  } catch {
-    store.sseError = '请求失败，请稍后重试'
-  } finally {
-    store.isLoading = false
-  }
+function sendExample(content: string) {
+  store.startGeneration(content)
 }
 </script>
 

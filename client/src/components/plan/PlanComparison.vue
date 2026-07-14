@@ -1,18 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-
-interface Props {
-  visible: boolean
-}
-
-interface Emits {
-  (e: 'close'): void
-  (e: 'apply', planIndex: number): void
-}
-
-defineProps<Props>()
-
-const emit = defineEmits<Emits>()
+import { ref, computed, watch } from 'vue'
+import { usePlanStore } from '@/stores/plan'
+import { DEFAULT_PLANS } from './plan-comparison-defaults'
 
 interface TransportOption {
   id: string
@@ -30,51 +19,60 @@ interface PlanOption {
   selectedFlight: number
 }
 
-const plans = ref<PlanOption[]>([
-  {
-    id: 'A',
-    label: '上海虹桥出发',
-    recommended: true,
-    trains: [
-      { id: 'G1234', time: '07:00-09:00', price: 200 },
-      { id: 'G5678', time: '08:30-10:30', price: 250 },
-    ],
-    flights: [
-      { id: 'MU123', time: '10:00-12:00', price: 600 },
-      { id: 'CA456', time: '14:00-16:00', price: 800 },
-    ],
-    selectedTrain: 0,
-    selectedFlight: 0,
-  },
-  {
-    id: 'B',
-    label: '无锡硕放出发',
-    recommended: false,
-    trains: [
-      { id: 'D1234', time: '06:30-11:00', price: 150 },
-      { id: 'D5678', time: '09:00-13:30', price: 180 },
-    ],
-    flights: [{ id: 'CZ789', time: '11:00-13:00', price: 550 }],
+interface Props {
+  visible: boolean
+  plans?: PlanOption[]
+  peopleCount?: number
+}
 
-    selectedTrain: 0,
-    selectedFlight: 0,
-  },
-])
+interface Emits {
+  (e: 'close'): void
+  (e: 'apply', planIndex: number): void
+}
 
-const PEOPLE_COUNT = 3
+const props = withDefaults(defineProps<Props>(), {
+  plans: () => DEFAULT_PLANS,
+  peopleCount: 3,
+})
+
+const emit = defineEmits<Emits>()
+
+const store = usePlanStore()
+
+// Local copy of plans to avoid mutating props
+const localPlans = ref<PlanOption[]>([])
+
+watch(
+  () => props.plans,
+  (plans) => {
+    localPlans.value = plans.map((p) => ({
+      ...p,
+      selectedTrain: p.selectedTrain ?? 0,
+      selectedFlight: p.selectedFlight ?? 0,
+    }))
+  },
+  { immediate: true },
+)
+
+const effectivePeopleCount = computed(() => {
+  if (props.peopleCount !== 3) return props.peopleCount
+  const plan = store.currentPlan
+  if (plan) return plan.members.adults + plan.members.children
+  return 3
+})
 
 function totalCost(plan: PlanOption): number {
-  const train = plan.trains[plan.selectedTrain]
-  const flight = plan.flights[plan.selectedFlight]
-  return (train.price + flight.price) * PEOPLE_COUNT
+  const trainPrice = plan.trains[plan.selectedTrain]?.price ?? 0
+  const flightPrice = plan.flights[plan.selectedFlight]?.price ?? 0
+  return (trainPrice + flightPrice) * effectivePeopleCount.value
 }
 
 function selectTrain(planIndex: number, trainIndex: number) {
-  plans.value[planIndex].selectedTrain = trainIndex
+  localPlans.value[planIndex].selectedTrain = trainIndex
 }
 
 function selectFlight(planIndex: number, flightIndex: number) {
-  plans.value[planIndex].selectedFlight = flightIndex
+  localPlans.value[planIndex].selectedFlight = flightIndex
 }
 
 function handleApply(planIndex: number) {
@@ -110,7 +108,7 @@ function handleApply(planIndex: number) {
         <!-- Plan cards -->
         <div class="overflow-y-auto px-6 pb-6 space-y-4">
           <div
-            v-for="(plan, pIdx) in plans"
+            v-for="(plan, pIdx) in localPlans"
             :key="plan.id"
             class="rounded-xl border p-5 relative transition-shadow"
             :class="
@@ -179,7 +177,7 @@ function handleApply(planIndex: number) {
 
             <!-- Total -->
             <div class="mt-3 text-sm text-gray-900 font-medium">
-              三人交通合计：¥{{ totalCost(plan) }}
+              {{ effectivePeopleCount }}人交通合计：¥{{ totalCost(plan) }}
             </div>
 
             <!-- Apply button -->

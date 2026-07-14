@@ -13,9 +13,12 @@ export class AiController {
   @Sse()
   chat(@Body('message') message: string, @CurrentUser('id') _userId: string) {
     return new Observable<{ data: string }>((subscriber) => {
-      this.aiService.chat(message, (event: SSEEvent) => {
-        subscriber.next({ data: JSON.stringify(event) })
-      })
+      this.aiService
+        .chat(message, (event: SSEEvent) => {
+          subscriber.next({ data: JSON.stringify(event) })
+        })
+        .then(() => subscriber.complete())
+        .catch((err) => subscriber.error(err))
     })
   }
 
@@ -23,9 +26,12 @@ export class AiController {
   @Sse()
   plan(@Body() requirements: UserRequirements, @CurrentUser('id') userId: string) {
     return new Observable<{ data: string }>((subscriber) => {
-      this.aiService.plan(requirements, userId, (event: SSEEvent) => {
-        subscriber.next({ data: JSON.stringify(event) })
-      })
+      this.aiService
+        .plan(requirements, userId, (event: SSEEvent) => {
+          subscriber.next({ data: JSON.stringify(event) })
+        })
+        .then(() => subscriber.complete())
+        .catch((err) => subscriber.error(err))
     })
   }
 
@@ -37,9 +43,12 @@ export class AiController {
     @CurrentUser('id') userId: string,
   ) {
     return new Observable<{ data: string }>((subscriber) => {
-      this.aiService.modify(planId, request, userId, (event: SSEEvent) => {
-        subscriber.next({ data: JSON.stringify(event) })
-      })
+      this.aiService
+        .modify(planId, request, userId, (event: SSEEvent) => {
+          subscriber.next({ data: JSON.stringify(event) })
+        })
+        .then(() => subscriber.complete())
+        .catch((err) => subscriber.error(err))
     })
   }
 }

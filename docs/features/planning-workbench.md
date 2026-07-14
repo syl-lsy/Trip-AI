@@ -220,6 +220,27 @@ client (Vue 3)                     server (NestJS)                ai (LangChain)
 - 前端三栏布局：左侧 OutlineSidebar(lg:显示)、中间 TimelineCenter、右侧 ChatPanel 正常渲染
 - 方案对比弹窗：Teleport 到 body，遮罩层 + 两方案卡片正常显示
 
+## Phase 2 Bug 修复清单 (2026-07-14)
+
+| #   | 问题                                         | 严重度  | 修改文件                                             | 修复要点                                                                |
+| --- | -------------------------------------------- | ------- | ---------------------------------------------------- | ----------------------------------------------------------------------- |
+| 1   | `modifyPlan` 不更新 `currentPlan`            | 🔴 核心 | `stores/plan.ts`                                     | PLAN 事件中添加 `currentPlan.value = event.data`                        |
+| 2   | `itineraryId` 从未设置                       | 🔴 核心 | `stores/plan.ts`, `server/.../CreateItineraryDto.ts` | SSE 流结束后自动调 `createItinerary()`；Dto 补 `itineraryJson` 字段     |
+| 3   | 进度骨架屏永不工作                           | 🔴 核心 | `ai/agent.ts`                                        | 在 `streamWithEvents` 中注入 `progress` 事件，映射 tool 调用到 5 个步骤 |
+| 4   | `invokePlanner/Modifier` 无 JSON 容错        | 🔴 核心 | `ai/agent.ts`                                        | `JSON.parse()` 包 try-catch，失败时 throw 明确错误                      |
+| 5   | `knowledge.ts` 函数签名忽略 `query`          | 🔴 核心 | `ai/tools/knowledge.ts`                              | 接受 `{ query }` 参数                                                   |
+| 6   | SSE Observable 永不 complete                 | 🟠 高   | `ai.controller.ts`                                   | 加 `.then(() => subscriber.complete())`                                 |
+| 7   | 快捷示例调用 stub REST                       | 🟠 高   | `TimelineCenter.vue`                                 | 改为调 `store.startGeneration(text)`                                    |
+| 8   | `modifyPlan` 提前 return 时 isLoading 未复位 | 🟠 高   | `stores/plan.ts`                                     | 加 `isLoading.value = false`                                            |
+| 12  | 消息数组无限增长                             | 🟡 中   | `stores/plan.ts`                                     | 加 `MAX_MESSAGES = 100`，超出时 `shift()`                               |
+| —   | SSE 竞态条件：多流事件污染                   | 🔴 核心 | `stores/plan.ts`                                     | `generationId` 递增计数器，回调中 `guardGenId()` 检查                   |
+| —   | `autoSavePlan` 静默吞错                      | 🟠 高   | `stores/plan.ts`                                     | 加 `.catch()` 设置 `sseError`                                           |
+| —   | `itinerary.ts` 硬编码路径                    | 🟡 中   | `client/src/api/itinerary.ts`                        | 改用 `ROUTES.ITINERARIES` 常量                                          |
+| —   | `totalCost` 数组越界                         | 🟡 中   | `PlanComparison.vue`                                 | 加 `?.price ?? 0` 保护                                                  |
+| —   | SSE Observable 未传播错误                    | 🟡 中   | `ai.controller.ts`                                   | 加 `.catch((err) => subscriber.error(err))`                             |
+| —   | PlanComparison 硬编码数据                    | 🟡 中   | `PlanComparison.vue`                                 | 改为 props 驱动，人数从 `store.currentPlan` 取                          |
+| —   | `CreateItineraryDto` 缺 `itineraryJson`      | 🔴 核心 | `create-itinerary.dto.ts`, `itinerary.service.ts`    | 补齐字段以使 auto-save 持久化行程 JSON                                  |
+
 ## 注意事项
 
 - AI Agent 层（`packages/ai`）需在 NestJS 启动前先构建（`pnpm --filter @trip/ai build`），否则动态 `import` 会失败

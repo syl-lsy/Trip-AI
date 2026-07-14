@@ -37,6 +37,9 @@ export class ItineraryService {
       ...(dto.childAge !== undefined && { childAge: dto.childAge }),
       ...(dto.pace && { pace: dto.pace }),
       ...(dto.budget !== undefined && { budget: dto.budget }),
+      ...(dto.itineraryJson !== undefined && {
+        itineraryJson: dto.itineraryJson as Prisma.InputJsonValue,
+      }),
     }
     return this.prisma.itinerary.create({ data })
   }

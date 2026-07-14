@@ -1,17 +1,23 @@
 import { post } from './client'
-import { ROUTES, API_PREFIX, STORAGE_KEYS } from '@trip/shared'
-
-const SSE_PREFIX_LENGTH = 6
+import { ROUTES, API_PREFIX, STORAGE_KEYS, SSE_EVENTS, SSE_PREFIX_LENGTH } from '@trip/shared'
 
 export type SseEvent =
   | {
-      type: 'progress'
+      type: typeof SSE_EVENTS.PROGRESS
       data: { step: number; status: 'running' | 'completed' | 'failed'; message?: string }
     }
-  | { type: 'plan'; data: unknown }
-  | { type: 'message'; data: { content: string; knowledgeRefs?: { id: string; title: string }[] } }
-  | { type: 'knowledge_ref'; data: { id: string; title: string } }
-  | { type: 'error'; data: { message: string } }
+  | { type: typeof SSE_EVENTS.PLAN; data: unknown }
+  | {
+      type: typeof SSE_EVENTS.MESSAGE
+      data: { content: string; knowledgeRefs?: { id: string; title: string }[] }
+    }
+  | { type: typeof SSE_EVENTS.REASONING; data: { content: string } }
+  | {
+      type: typeof SSE_EVENTS.TOOL_CALL
+      data: { tool: string; status: 'start' | 'end'; input?: unknown; output?: unknown }
+    }
+  | { type: typeof SSE_EVENTS.KNOWLEDGE_REF; data: { id: string; title: string } }
+  | { type: typeof SSE_EVENTS.ERROR; data: { message: string } }
 
 function createSseFetch(
   url: string,
@@ -19,6 +25,7 @@ function createSseFetch(
   onEvent: (event: SseEvent) => void,
   onError?: (err: unknown) => void,
   signal?: AbortSignal,
+  onComplete?: () => void,
 ): void {
   const token = localStorage.getItem(STORAGE_KEYS.TOKEN)
   const headers: Record<string, string> = {
@@ -36,7 +43,7 @@ function createSseFetch(
   })
     .then(async (response) => {
       const reader = response.body?.getReader()
-      if (!reader) return
+      if (!reader) return onComplete?.()
       const decoder = new TextDecoder()
       while (true) {
         const { done, value } = await reader.read()
@@ -52,6 +59,7 @@ function createSseFetch(
           }
         }
       }
+      onComplete?.()
     })
     .catch((err) => {
       if (err.name !== 'AbortError') onError?.(err)
@@ -67,6 +75,7 @@ export const planApi = {
     message: string,
     onEvent: (event: SseEvent) => void,
     onError?: (err: unknown) => void,
+    onComplete?: () => void,
   ): AbortController {
     const controller = new AbortController()
     createSseFetch(
@@ -75,6 +84,7 @@ export const planApi = {
       onEvent,
       onError,
       controller.signal,
+      onComplete,
     )
     return controller
   },
@@ -83,10 +93,17 @@ export const planApi = {
     requirements: unknown,
     onEvent: (event: SseEvent) => void,
     onError?: (err: unknown) => void,
+    onComplete?: () => void,
   ): AbortController {
     const controller = new AbortController()
-    createSseFetch(`${API_PREFIX}/ai/plan`, requirements, onEvent, onError, controller.signal)
-    // TODO: 改用 ROUTES.AI.PLAN 常量
+    createSseFetch(
+      `${API_PREFIX}${ROUTES.AI.PLAN}`,
+      requirements,
+      onEvent,
+      onError,
+      controller.signal,
+      onComplete,
+    )
     return controller
   },
 
@@ -95,6 +112,7 @@ export const planApi = {
     request: string,
     onEvent: (event: SseEvent) => void,
     onError?: (err: unknown) => void,
+    onComplete?: () => void,
   ): AbortController {
     const controller = new AbortController()
     createSseFetch(
@@ -103,6 +121,7 @@ export const planApi = {
       onEvent,
       onError,
       controller.signal,
+      onComplete,
     )
     return controller
   },

@@ -71,6 +71,17 @@ Last updated: 2026-07-09
 
 ## Auto Memory（AI 自动记录）
 
+- 2026-07-14 | bugfix | Phase 2 bug fix round: fixed 11 issues in stores/plan.ts (generationId guard, currentPlan update, isLoading reset, message limit, auto-save), ai/agent.ts (progress events, JSON error handling), ai/controller.ts (Observable complete+error), CreateItineraryDto (itineraryJson field), PlanComparison (props-driven data, totalCost protection, array bounds), knowledge.ts (function signature), itinerary.ts (path constants), TimelineCenter (real SSE). All pnpm check passes.
+
+- 2026-07-14 | cross-session | ## 下一步
+- 2026-07-14 | cross-session | ## 下一步
+
+- 2026-07-13 | decision | itecture] 前端 SSE 流式渲染改造：新增 packages/shared/src/constants/sse.ts（SSE_EVENTS/SSE_STATUS/SSE_TOOL_STATUS），api/plan.ts 使用常量替代硬编码；stores/plan.ts 新增 ChatMessage.reasoning/toolCalls 字段；新建 ThinkingSection.vue（思考折叠面板）+ ToolCallSection.vue（工具调用折叠面板）；agent.ts 解析 DeepSeek 多段回复分别发送 reasoning + tool_call + message 事件。
+
+- 2026-07-13 | architecture | 前端 SSE 流式渲染改造：新增 packages/shared/src/constants/sse.ts（SSE_EVENTS/SSE_STATUS/SSE_TOOL_STATUS），api/plan.ts 使用常量替代硬编码；stores/plan.ts 新增 ChatMessage.reasoning/toolCalls 字段；新建 ThinkingSection.vue（思考折叠面板）+ ToolCallSection.vue（工具调用折叠面板）；agent.ts 解析 DeepSeek 多段回复分别发送 reasoning + tool_call + message 事件。
+
+- 2026-07-13 | config | opencode.json 中 build/plan 配置按官方文档对齐：plan 权限改为 ask/ask（编辑和 bash 执行前询问），移除自定义 prompt/desc/temp/top_p。build 移除冗余字段。
+
 - 2026-07-13 | decision | itecture] 2026-07-13 | feature | Deep Agents 迁移完成：ai/src/agent.ts 使用 createDeepAgent + 3 subagent（planner/modifier/qa），Tool 类改为 @tool 装饰器函数，prompt 拆分到 ai/src/prompts/，server/ai.service.ts 改用 streamEvents v3 API。已推送 Gitee。
 
 - 2026-07-13 | architecture | 2026-07-13 | feature | Deep Agents 迁移完成：ai/src/agent.ts 使用 createDeepAgent + 3 subagent（planner/modifier/qa），Tool 类改为 @tool 装饰器函数，prompt 拆分到 ai/src/prompts/，server/ai.service.ts 改用 streamEvents v3 API。已推送 Gitee。
@@ -187,4 +198,4 @@ Last updated: 2026-07-09
 
 - 2026-07-11 | architecture | 记忆系统 9 项优化完成：GC mtime 修复、心跳去重、对话日志归档、段落级 BM25 分块、context-mode 桥接、跨会话知识整合、MEMORY.md 自动同步、回复前检索链指令强化
 
-<!-- 以下由 AI 在会话中自动写入，按 YYYY-MM-DD | 类型 | 内容 格式。已有相似条目则更新，不重复。 -->
+<!-- truncation: exceeded 200 line limit -->
