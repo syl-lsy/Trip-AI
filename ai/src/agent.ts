@@ -86,6 +86,35 @@ const tripAgent = createDeepAgent({
 //   plan         → TripPlan
 //   error        → { message: string }
 
+/** Try to parse accumulated text as a JSON array of ContentBlocks */
+function tryParseContentBlocks(content: string): { reasoning?: string; text: string } | null {
+  const trimmed = content.trim()
+  if (!trimmed.startsWith('[')) return null
+  try {
+    const parsed = JSON.parse(trimmed)
+    if (!Array.isArray(parsed)) return null
+    const reasoning = parsed.find((b: { type?: string }) => b.type === 'reasoning')?.reasoning as
+      string | undefined
+    const textBlock = parsed.find(
+      (b: { type?: string; text?: string }) => b.type === 'text' && b.text,
+    )
+    const text = textBlock?.text as string | undefined
+    if (reasoning || text)
+      return {
+        reasoning,
+        text:
+          text ??
+          parsed
+            .map((b: { text?: string }) => b.text ?? '')
+            .join('')
+            .trim(),
+      }
+    return { text: trimmed }
+  } catch {
+    return null
+  }
+}
+
 /** Try to parse content as TripPlan JSON */
 function tryParsePlan(content: string): TripPlan | null {
   try {
@@ -226,13 +255,31 @@ async function streamWithMessages(
     data: { step: 5, status: 'running', message: '生成每日行程' },
   })
 
-  // Emit final result — plan or plain message
+  // Emit final result: ContentBlock JSON → reasoning + text, or plain text
   if (accumulatedText) {
-    const plan = tryParsePlan(accumulatedText)
-    if (plan && (accumulatedText.includes('"days"') || accumulatedText.includes('"title"'))) {
-      onEvent({ type: 'plan', data: plan })
+    const blocks = tryParseContentBlocks(accumulatedText)
+    if (blocks) {
+      // Reasoning was embedded as ContentBlock JSON in the text
+      if (blocks.reasoning) {
+        onEvent({ type: 'reasoning', data: { content: blocks.reasoning } })
+      }
+      const text = blocks.text
+      if (text) {
+        const plan = tryParsePlan(text)
+        if (plan && (text.includes('"days"') || text.includes('"title"'))) {
+          onEvent({ type: 'plan', data: plan })
+        } else {
+          onEvent({ type: 'message', data: { content: text } })
+        }
+      }
     } else {
-      onEvent({ type: 'message', data: { content: accumulatedText } })
+      // Plain text — try plan detection
+      const plan = tryParsePlan(accumulatedText)
+      if (plan && (accumulatedText.includes('"days"') || accumulatedText.includes('"title"'))) {
+        onEvent({ type: 'plan', data: plan })
+      } else {
+        onEvent({ type: 'message', data: { content: accumulatedText } })
+      }
     }
   }
 
