@@ -114,7 +114,7 @@ export const usePlanStore = defineStore('plan', () => {
       s.status = 'pending'
     })
 
-    const pendingMessage: ChatMessage = { role: 'assistant', content: '' }
+    let pendingMessage: ChatMessage = { role: 'assistant', content: '' }
     let isAssistantMessageAdded = false
 
     abortController = planApi.subscribeChat(
@@ -126,6 +126,7 @@ export const usePlanStore = defineStore('plan', () => {
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
+            pendingMessage = messages.value[messages.value.length - 1]
           }
         } else if (event.type === SSE_EVENTS.MESSAGE) {
           isLoading.value = false
@@ -135,6 +136,7 @@ export const usePlanStore = defineStore('plan', () => {
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
+            pendingMessage = messages.value[messages.value.length - 1]
           }
           if (event.data.knowledgeRefs) {
             pendingMessage.knowledgeRefs = event.data.knowledgeRefs
@@ -145,12 +147,14 @@ export const usePlanStore = defineStore('plan', () => {
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
+            pendingMessage = messages.value[messages.value.length - 1]
           }
         } else if (event.type === SSE_EVENTS.REASONING) {
           pendingMessage.reasoning = event.data.content
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
+            pendingMessage = messages.value[messages.value.length - 1]
           }
         } else if (event.type === SSE_EVENTS.TOOL_CALL) {
           if (!pendingMessage.toolCalls) pendingMessage.toolCalls = []
@@ -213,7 +217,7 @@ export const usePlanStore = defineStore('plan', () => {
     isLoading.value = true
     sseError.value = null
 
-    const pendingMessage: ChatMessage = { role: 'assistant', content: '' }
+    let pendingMessage: ChatMessage = { role: 'assistant', content: '' }
     let isAssistantMessageAdded = false
 
     abortController = planApi.subscribeModify(
@@ -226,6 +230,7 @@ export const usePlanStore = defineStore('plan', () => {
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
+            pendingMessage = messages.value[messages.value.length - 1]
           }
         } else if (event.type === SSE_EVENTS.MESSAGE) {
           isLoading.value = false
@@ -235,6 +240,7 @@ export const usePlanStore = defineStore('plan', () => {
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
+            pendingMessage = messages.value[messages.value.length - 1]
           }
         } else if (event.type === SSE_EVENTS.PLAN) {
           isLoading.value = false
@@ -243,12 +249,14 @@ export const usePlanStore = defineStore('plan', () => {
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
+            pendingMessage = messages.value[messages.value.length - 1]
           }
         } else if (event.type === SSE_EVENTS.REASONING) {
           pendingMessage.reasoning = event.data.content
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
+            pendingMessage = messages.value[messages.value.length - 1]
           }
         } else if (event.type === SSE_EVENTS.TOOL_CALL) {
           if (!pendingMessage.toolCalls) pendingMessage.toolCalls = []
@@ -324,7 +332,7 @@ export const usePlanStore = defineStore('plan', () => {
       s.status = 'pending'
     })
 
-    const pendingMessage: ChatMessage = { role: 'assistant', content: '' }
+    let pendingMessage: ChatMessage = { role: 'assistant', content: '' }
     let isAssistantMessageAdded = false
 
     abortController = planApi.subscribePlan(
@@ -336,6 +344,7 @@ export const usePlanStore = defineStore('plan', () => {
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
+            pendingMessage = messages.value[messages.value.length - 1]
           }
         } else if (event.type === SSE_EVENTS.PLAN) {
           currentPlan.value = event.data as TripPlan
@@ -344,6 +353,7 @@ export const usePlanStore = defineStore('plan', () => {
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
+            pendingMessage = messages.value[messages.value.length - 1]
           }
         } else if (event.type === SSE_EVENTS.MESSAGE) {
           isLoading.value = false
@@ -353,12 +363,14 @@ export const usePlanStore = defineStore('plan', () => {
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
+            pendingMessage = messages.value[messages.value.length - 1]
           }
         } else if (event.type === SSE_EVENTS.REASONING) {
           pendingMessage.reasoning = event.data.content
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
+            pendingMessage = messages.value[messages.value.length - 1]
           }
         } else if (event.type === SSE_EVENTS.TOOL_CALL) {
           if (!pendingMessage.toolCalls) pendingMessage.toolCalls = []
