@@ -80,6 +80,10 @@ function createSseFetch(
           try {
             const event = JSON.parse(line.slice(SSE_PREFIX_LENGTH)) as SseEvent
             onEvent(event)
+            // Yield to Vue renderer between message_chunk tokens for per-character effect
+            if (event.type === 'message_chunk') {
+              await new Promise((r) => setTimeout(r, 16))
+            }
           } catch {
             // skip malformed lines
           }
