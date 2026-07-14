@@ -71,6 +71,8 @@ Last updated: 2026-07-09
 
 ## Auto Memory（AI 自动记录）
 
+- 2026-07-14 | decision | dev-cycle skill 从 7 步升级为 8 步，新增第 3 步"自动多轮排查"（Auto Verification Loop）：reviewer + verifier 循环执行，连续 2 轮 0 新问题方可通过，最多 3 轮后上报用户裁决。AGENTS.md 和 agent-workflow.md 同步更新。
+
 - 2026-07-14 | bugfix | Phase 2 bug fix round: fixed 11 issues in stores/plan.ts (generationId guard, currentPlan update, isLoading reset, message limit, auto-save), ai/agent.ts (progress events, JSON error handling), ai/controller.ts (Observable complete+error), CreateItineraryDto (itineraryJson field), PlanComparison (props-driven data, totalCost protection, array bounds), knowledge.ts (function signature), itinerary.ts (path constants), TimelineCenter (real SSE). All pnpm check passes.
 
 - 2026-07-14 | cross-session | ## 下一步
@@ -195,7 +197,5 @@ Last updated: 2026-07-09
 - 2026-07-11 | cross-session | ## 下一步
 
 - 2026-07-11 | decision | itecture] 记忆系统 9 项优化完成：GC mtime 修复、心跳去重、对话日志归档、段落级 BM25 分块、context-mode 桥接、跨会话知识整合、MEMORY.md 自动同步、回复前检索链指令强化
-
-- 2026-07-11 | architecture | 记忆系统 9 项优化完成：GC mtime 修复、心跳去重、对话日志归档、段落级 BM25 分块、context-mode 桥接、跨会话知识整合、MEMORY.md 自动同步、回复前检索链指令强化
 
 <!-- truncation: exceeded 200 line limit -->

@@ -180,15 +180,18 @@ export const usePlanStore = defineStore('plan', () => {
     })
   }
 
-  function modifyPlan(request: string) {
+  async function modifyPlan(request: string) {
     if (!currentPlan.value) {
       isLoading.value = false
       return
     }
     if (!itineraryId.value) {
-      isLoading.value = false
-      sseError.value = '请先保存行程后再修改'
-      return
+      await autoSavePlan()
+      if (!itineraryId.value) {
+        isLoading.value = false
+        sseError.value = '请先保存行程后再修改'
+        return
+      }
     }
 
     currentGenerationId++
@@ -264,27 +267,26 @@ export const usePlanStore = defineStore('plan', () => {
     )
   }
 
-  function autoSavePlan() {
+  async function autoSavePlan() {
     const plan = currentPlan.value
     if (!plan) return
 
-    createItinerary({
-      title: plan.title,
-      destination: plan.destination,
-      adults: plan.members.adults,
-      children: plan.members.children,
-      childAge: plan.members.childAge,
-      budget: plan.budget.total,
-      itineraryJson: plan,
-    })
-      .then((res) => {
-        if (res.success && res.data) {
-          itineraryId.value = res.data.id
-        }
+    try {
+      const res = await createItinerary({
+        title: plan.title,
+        destination: plan.destination,
+        adults: plan.members.adults,
+        children: plan.members.children,
+        childAge: plan.members.childAge,
+        budget: plan.budget.total,
+        itineraryJson: plan,
       })
-      .catch(() => {
-        sseError.value = '自动保存失败，修改将不可用'
-      })
+      if (res.success && res.data) {
+        itineraryId.value = res.data.id
+      }
+    } catch {
+      sseError.value = '自动保存失败，修改将不可用'
+    }
   }
 
   function startPlan(requirements: unknown) {

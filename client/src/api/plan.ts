@@ -107,9 +107,11 @@ function createSseFetch(
 // Combine two AbortSignals into one
 function combineSignals(s1: AbortSignal, s2: AbortSignal): AbortSignal {
   const controller = new AbortController()
-  const abort = () => controller.abort()
-  s1.addEventListener('abort', abort)
-  s2.addEventListener('abort', abort)
+  const onAbort = () => controller.abort()
+  s1.addEventListener('abort', onAbort)
+  s2.addEventListener('abort', onAbort)
+  // If either signal already aborted, abort immediately
+  if (s1.aborted || s2.aborted) controller.abort()
   return controller.signal
 }
 

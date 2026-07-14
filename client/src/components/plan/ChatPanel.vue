@@ -17,9 +17,9 @@ function sendMessage(content?: string) {
   inputMessage.value = ''
 }
 
-function handleQuickAction(text: string) {
+async function handleQuickAction(text: string) {
   if (store.currentPlan) {
-    store.modifyPlan(text)
+    await store.modifyPlan(text)
   } else {
     store.startGeneration(text)
   }
@@ -101,9 +101,14 @@ function handleKeydown(e: { key: string; shiftKey: boolean; preventDefault: () =
           {{ store.sseError }}
         </div>
       </div>
+
+      <!-- Persistent quick actions when not in welcome state -->
+      <div v-if="!store.showWelcome && !store.isLoading" class="pt-2">
+        <QuickActions :hasPlan="!!store.currentPlan" @action="handleQuickAction" />
+      </div>
     </div>
 
-    <ProgressSkeleton v-if="store.isLoading && !store.currentPlan" :steps="store.progressSteps" />
+    <ProgressSkeleton v-if="store.isLoading" :steps="store.progressSteps" />
 
     <div class="px-4 py-3 border-t border-gray-100">
       <div class="flex items-end gap-2">
