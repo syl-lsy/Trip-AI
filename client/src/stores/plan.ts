@@ -150,7 +150,7 @@ export const usePlanStore = defineStore('plan', () => {
             pendingMessage = messages.value[messages.value.length - 1]
           }
         } else if (event.type === SSE_EVENTS.REASONING) {
-          pendingMessage.reasoning = event.data.content
+          pendingMessage.reasoning = (pendingMessage.reasoning || '') + event.data.content
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
@@ -252,7 +252,7 @@ export const usePlanStore = defineStore('plan', () => {
             pendingMessage = messages.value[messages.value.length - 1]
           }
         } else if (event.type === SSE_EVENTS.REASONING) {
-          pendingMessage.reasoning = event.data.content
+          pendingMessage.reasoning = (pendingMessage.reasoning || '') + event.data.content
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
@@ -366,7 +366,7 @@ export const usePlanStore = defineStore('plan', () => {
             pendingMessage = messages.value[messages.value.length - 1]
           }
         } else if (event.type === SSE_EVENTS.REASONING) {
-          pendingMessage.reasoning = event.data.content
+          pendingMessage.reasoning = (pendingMessage.reasoning || '') + event.data.content
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true

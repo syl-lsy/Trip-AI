@@ -40,13 +40,15 @@ const toolStepMapping: Record<string, StepKey> = {
 
 const SPACING = 2
 
-const BASE_URL = process.env.OPENCODE_GO_BASE_URL || 'https://opencode.ai/zen/go/v1'
+// const BASE_URL = process.env.OPENCODE_GO_BASE_URL || 'https://opencode.ai/zen/go/v1'
 
 const model = new ChatDeepSeek({
   model: 'deepseek-v4-flash',
   temperature: 0.3,
-  maxTokens: 2048,
-  configuration: { baseURL: BASE_URL },
+  maxTokens: 300000,
+  maxRetries: 5,
+  timeout: 120000, // 2 minutes
+  // configuration: { baseURL: BASE_URL },
 })
 
 const tools = [searchFlights, searchTrains, searchHotels, searchPOI, searchKnowledge]
@@ -85,35 +87,6 @@ const tripAgent = createDeepAgent({
 //   message      → { content: string, knowledgeRefs? }
 //   plan         → TripPlan
 //   error        → { message: string }
-
-/** Try to parse accumulated text as a JSON array of ContentBlocks */
-function tryParseContentBlocks(content: string): { reasoning?: string; text: string } | null {
-  const trimmed = content.trim()
-  if (!trimmed.startsWith('[')) return null
-  try {
-    const parsed = JSON.parse(trimmed)
-    if (!Array.isArray(parsed)) return null
-    const reasoning = parsed.find((b: { type?: string }) => b.type === 'reasoning')?.reasoning as
-      string | undefined
-    const textBlock = parsed.find(
-      (b: { type?: string; text?: string }) => b.type === 'text' && b.text,
-    )
-    const text = textBlock?.text as string | undefined
-    if (reasoning || text)
-      return {
-        reasoning,
-        text:
-          text ??
-          parsed
-            .map((b: { text?: string }) => b.text ?? '')
-            .join('')
-            .trim(),
-      }
-    return { text: trimmed }
-  } catch {
-    return null
-  }
-}
 
 /** Try to parse content as TripPlan JSON */
 function tryParsePlan(content: string): TripPlan | null {
@@ -255,31 +228,31 @@ async function streamWithMessages(
     data: { step: 5, status: 'running', message: '生成每日行程' },
   })
 
-  // Emit final result: ContentBlock JSON → reasoning + text, or plain text
+  // Emit final result — plan or plain message
+  // Reasoning was already streamed via additional_kwargs.reasoning_content events
   if (accumulatedText) {
-    const blocks = tryParseContentBlocks(accumulatedText)
-    if (blocks) {
-      // Reasoning was embedded as ContentBlock JSON in the text
-      if (blocks.reasoning) {
-        onEvent({ type: 'reasoning', data: { content: blocks.reasoning } })
-      }
-      const text = blocks.text
-      if (text) {
-        const plan = tryParsePlan(text)
-        if (plan && (text.includes('"days"') || text.includes('"title"'))) {
-          onEvent({ type: 'plan', data: plan })
-        } else {
-          onEvent({ type: 'message', data: { content: text } })
+    // Try to extract clean text from ContentBlock JSON
+    // During streaming, the raw JSON tokens appear as message_chunks
+    // We emit the parsed text here to replace them
+    let cleanText = accumulatedText
+    const trimmed = accumulatedText.trim()
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (Array.isArray(parsed)) {
+          const textBlock = parsed.find((b: { type?: string; text?: string }) => b.type === 'text')
+          if (textBlock?.text) cleanText = textBlock.text
         }
+      } catch {
+        // Not valid JSON — use as-is
       }
+    }
+
+    const plan = tryParsePlan(cleanText)
+    if (plan && (cleanText.includes('"days"') || cleanText.includes('"title"'))) {
+      onEvent({ type: 'plan', data: plan })
     } else {
-      // Plain text — try plan detection
-      const plan = tryParsePlan(accumulatedText)
-      if (plan && (accumulatedText.includes('"days"') || accumulatedText.includes('"title"'))) {
-        onEvent({ type: 'plan', data: plan })
-      } else {
-        onEvent({ type: 'message', data: { content: accumulatedText } })
-      }
+      onEvent({ type: 'message', data: { content: cleanText } })
     }
   }
 
