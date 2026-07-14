@@ -1,6 +1,6 @@
 import { createDeepAgent, type DeepAgent } from 'deepagents'
 import { ChatDeepSeek } from '@langchain/deepseek'
-import { HumanMessage, SystemMessage, AIMessageChunk, ToolMessage } from 'langchain'
+import { HumanMessage, SystemMessage } from 'langchain'
 import type { TripPlan } from './types'
 import { searchFlights, searchTrains } from './tools/transport'
 import { searchHotels } from './tools/accommodation'
@@ -75,8 +75,52 @@ const tripAgent = createDeepAgent({
   ],
 }) as DeepAgent
 
-// ─── Helpers ───────────────────────────────────────────
+// ─── Streaming with token-level output ─────────────────
 
+// SSE events emitted by this module:
+//   progress     → { step, status, message }
+//   tool_call    → { tool, status: 'start'|'end', input?, output? }
+//   message_chunk → { chunk: string }
+//   reasoning    → { content: string }
+//   message      → { content: string, knowledgeRefs? }
+//   plan         → TripPlan
+//   error        → { message: string }
+
+interface ContentBlock {
+  type: string
+  text?: string
+  reasoning?: string
+}
+
+/** Try to parse accumulated text as a JSON array of ContentBlocks */
+function tryParseContentBlocks(content: string): ContentBlock[] | null {
+  const trimmed = content.trim()
+  if (!trimmed.startsWith('[')) return null
+  try {
+    const parsed = JSON.parse(trimmed)
+    if (Array.isArray(parsed)) return parsed as ContentBlock[]
+  } catch {
+    // Not valid JSON — treat as plain text
+  }
+  return null
+}
+
+/** Extract reasoning text from ContentBlock array */
+function extractReasoning(blocks: ContentBlock[]): string | undefined {
+  return blocks.find((b) => b.type === 'reasoning')?.reasoning
+}
+
+/** Extract text from ContentBlock array */
+function extractText(blocks: ContentBlock[]): string {
+  const textBlock = blocks.find((b) => b.type === 'text' && b.text)
+  if (textBlock?.text) return textBlock.text
+  return blocks
+    .map((b) => b.text || '')
+    .join('')
+    .trim()
+}
+
+/** Try to parse content as TripPlan JSON */
 function tryParsePlan(content: string): TripPlan | null {
   try {
     return JSON.parse(content) as TripPlan
@@ -98,12 +142,10 @@ function finalizeProgress(onEvent: (e: SSEEvent) => void, keys: StepKey[]): void
   for (const key of keys) {
     const info = STEP_MAP[key]
     if (!info) continue
-    if (info.status === 'running') {
-      onEvent({
-        type: 'progress',
-        data: { step: info.id, status: 'completed', message: info.message },
-      })
-    }
+    onEvent({
+      type: 'progress',
+      data: { step: info.id, status: 'completed', message: info.message },
+    })
   }
 }
 
@@ -112,10 +154,8 @@ function emitError(error: unknown, onEvent: (e: SSEEvent) => void, logger: Conso
   onEvent({ type: 'error', data: { message: 'AI 服务暂时不可用，请稍后重试。' } })
 }
 
-// ─── Streaming with token-level output ─────────────────
-
 async function streamWithMessages(
-  messages: Parameters<typeof tripAgent.stream>[0]['messages'],
+  messages: unknown[],
   onEvent: (e: SSEEvent) => void,
 ): Promise<void> {
   // Emit step 1 — read request
@@ -125,54 +165,52 @@ async function streamWithMessages(
   })
 
   const emittedSteps = new Set<StepKey>()
-  let accumulatedContent = ''
+  let accumulatedText = ''
 
-  // Stream with messages mode for token-level streaming + tool calls
-  const stream = await tripAgent.stream(
-    { messages } as Parameters<typeof tripAgent.stream>[0],
-    { streamMode: 'messages', subgraphs: true } as Record<string, unknown>,
-  )
+  // Use agent.stream with streamMode "messages" for token-level text + tool results
+  // _getType() works on ALL messages (serialized or live), unlike instanceof
+  const stream = await tripAgent.stream({ messages }, { streamMode: 'messages', subgraphs: true })
 
   for await (const rawChunk of stream) {
     // With subgraphs: true, chunk is [namespace, data]
-    // With streamMode "messages", data is [token, metadata]
+    // With streamMode "messages", data is [messageChunk, metadata]
     const items = (Array.isArray(rawChunk) ? rawChunk : [rawChunk]) as unknown[]
-    // items = [namespace, data] when subgraphs: true
     const data = items.length >= 2 ? items[1] : items[0] // eslint-disable-line no-magic-numbers
-
-    // data should be [token, metadata]
     if (!Array.isArray(data) || data.length < 2) continue // eslint-disable-line no-magic-numbers
 
-    const [token] = data as [unknown, Record<string, unknown>]
+    const [msg] = data as [unknown, Record<string, unknown>]
+    const anyMsg = msg as Record<string, unknown>
+    // _getType is a LangChain API method — naming is not our choice
 
-    // ── 1. AI text token ──
-    if (token instanceof AIMessageChunk) {
-      const textContent = typeof token.content === 'string' ? token.content : ''
-      const toolCallChunks = token.tool_call_chunks ?? []
+    const msgType = typeof anyMsg._getType === 'function' ? (anyMsg._getType as () => string)() : ''
 
-      // Pure text token
-      if (textContent && (!toolCallChunks || toolCallChunks.length === 0)) {
-        accumulatedContent += textContent
+    // ── 1. AI message — text token OR tool call chunk ──
+    if (msgType === 'ai') {
+      const textContent = typeof anyMsg.content === 'string' ? anyMsg.content : ''
+      // tool_call_chunks is a LangChain message property — naming is not our choice
+
+      const tcChunks = anyMsg.tool_call_chunks as
+        { name?: string; args?: string; id?: string }[] | undefined
+
+      // Pure text token → emit message_chunk (streaming!)
+      if (textContent && (!tcChunks || tcChunks.length === 0)) {
+        accumulatedText += textContent
         onEvent({ type: 'message_chunk', data: { chunk: textContent } })
       }
 
-      // Tool call chunks being constructed
-      if (toolCallChunks && toolCallChunks.length > 0) {
-        for (const tc of toolCallChunks) {
+      // Tool call being constructed (tool_call_chunks is live ONLY without subgraphs,
+      // but we check anyway as a best-effort)
+      if (tcChunks && tcChunks.length > 0) {
+        for (const tc of tcChunks) {
           if (tc.name) {
             const stepKey = toolStepMapping[tc.name]
             if (stepKey && !emittedSteps.has(stepKey)) {
               emittedSteps.add(stepKey)
               emitProgress(onEvent, stepKey)
             }
-
             onEvent({
               type: 'tool_call',
-              data: {
-                tool: tc.name,
-                status: 'start',
-                input: tc.args ? JSON.parse(tc.args) : {},
-              },
+              data: { tool: tc.name, status: 'start', input: tc.args ? tryParseJson(tc.args) : {} },
             })
           }
         }
@@ -180,21 +218,30 @@ async function streamWithMessages(
     }
 
     // ── 2. Tool result ──
-    if (token instanceof ToolMessage) {
-      // Emit comparePrice progress if we had transport tools
-      const stepKey = toolStepMapping[token.name ?? '']
-      if (stepKey && emittedSteps.has(stepKey)) {
-        // Tool finished — will be finalized after all tools
+    if (msgType === 'tool') {
+      const tm = msg as { name?: string; content: string }
+      const toolName = tm.name ?? 'unknown'
+
+      // Map to progress step
+      const stepKey = toolStepMapping[toolName]
+      if (stepKey && !emittedSteps.has(stepKey)) {
+        emittedSteps.add(stepKey)
+        emitProgress(onEvent, stepKey)
       }
 
       onEvent({
         type: 'tool_call',
-        data: { tool: token.name ?? 'unknown', status: 'end', output: token.content },
+        data: { tool: toolName, status: 'start' },
+      })
+      onEvent({
+        type: 'tool_call',
+        data: { tool: toolName, status: 'end', output: tm.content },
       })
     }
   }
 
   // ── Stream complete — process final result ──
+
   // Complete tool-related progress steps
   emitProgress(onEvent, 'comparePrice')
   finalizeProgress(onEvent, ['searchTransport', 'comparePrice', 'searchPoiHotel'])
@@ -205,13 +252,32 @@ async function streamWithMessages(
     data: { step: 5, status: 'running', message: '生成每日行程' },
   })
 
-  // Try to parse the complete content as a plan
-  if (accumulatedContent) {
-    const plan = tryParsePlan(accumulatedContent)
-    if (plan && (accumulatedContent.includes('"days"') || accumulatedContent.includes('"title"'))) {
+  // Try to parse accumulated text as ContentBlock JSON
+  // DeepSeek sometimes returns [{"type":"reasoning","reasoning":"..."},{"type":"text","text":"..."}]
+  const blocks = tryParseContentBlocks(accumulatedText)
+  if (blocks) {
+    const reasoning = extractReasoning(blocks)
+    const text = extractText(blocks)
+
+    if (reasoning) {
+      onEvent({ type: 'reasoning', data: { content: reasoning } })
+    }
+
+    if (text) {
+      const plan = tryParsePlan(text)
+      if (plan && (text.includes('"days"') || text.includes('"title"'))) {
+        onEvent({ type: 'plan', data: plan })
+      } else {
+        onEvent({ type: 'message', data: { content: text } })
+      }
+    }
+  } else if (accumulatedText) {
+    // Plain text (no ContentBlock structure)
+    const plan = tryParsePlan(accumulatedText)
+    if (plan && (accumulatedText.includes('"days"') || accumulatedText.includes('"title"'))) {
       onEvent({ type: 'plan', data: plan })
     } else {
-      onEvent({ type: 'message', data: { content: accumulatedContent } })
+      onEvent({ type: 'message', data: { content: accumulatedText } })
     }
   }
 
@@ -220,6 +286,15 @@ async function streamWithMessages(
     type: 'progress',
     data: { step: 5, status: 'completed', message: '行程生成完成' },
   })
+}
+
+/** Safe JSON.parse that returns object or empty object */
+function tryParseJson(text: string): Record<string, unknown> {
+  try {
+    return JSON.parse(text) as Record<string, unknown>
+  } catch {
+    return {}
+  }
 }
 
 // ─── Public API ────────────────────────────────────────
