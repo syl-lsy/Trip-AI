@@ -121,15 +121,27 @@ export const usePlanStore = defineStore('plan', () => {
       message,
       (event) => {
         if (!guardGenId(genId)) return
-        if (event.type === SSE_EVENTS.MESSAGE || event.type === SSE_EVENTS.PLAN) {
+        if (event.type === SSE_EVENTS.MESSAGE_CHUNK) {
+          pendingMessage.content += event.data.chunk
+          if (!isAssistantMessageAdded) {
+            messages.value.push(pendingMessage)
+            isAssistantMessageAdded = true
+          }
+        } else if (event.type === SSE_EVENTS.MESSAGE) {
           isLoading.value = false
-          pendingMessage.content =
-            event.type === SSE_EVENTS.MESSAGE
-              ? event.data.content
-              : '行程已生成！你可以查看左侧的行程概览。'
-          if (event.type === SSE_EVENTS.MESSAGE && event.data.knowledgeRefs) {
+          if (event.data.content) {
+            pendingMessage.content = event.data.content
+          }
+          if (!isAssistantMessageAdded) {
+            messages.value.push(pendingMessage)
+            isAssistantMessageAdded = true
+          }
+          if (event.data.knowledgeRefs) {
             pendingMessage.knowledgeRefs = event.data.knowledgeRefs
           }
+        } else if (event.type === SSE_EVENTS.PLAN) {
+          isLoading.value = false
+          pendingMessage.content = '行程已生成！你可以查看左侧的行程概览。'
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
@@ -209,14 +221,25 @@ export const usePlanStore = defineStore('plan', () => {
       request,
       (event) => {
         if (!guardGenId(genId)) return
-        if (event.type === SSE_EVENTS.MESSAGE || event.type === SSE_EVENTS.PLAN) {
+        if (event.type === SSE_EVENTS.MESSAGE_CHUNK) {
+          pendingMessage.content += event.data.chunk
+          if (!isAssistantMessageAdded) {
+            messages.value.push(pendingMessage)
+            isAssistantMessageAdded = true
+          }
+        } else if (event.type === SSE_EVENTS.MESSAGE) {
           isLoading.value = false
-          if (event.type === SSE_EVENTS.PLAN) {
-            currentPlan.value = event.data as TripPlan
-            pendingMessage.content = '行程已更新！'
-          } else {
+          if (event.data.content) {
             pendingMessage.content = event.data.content
           }
+          if (!isAssistantMessageAdded) {
+            messages.value.push(pendingMessage)
+            isAssistantMessageAdded = true
+          }
+        } else if (event.type === SSE_EVENTS.PLAN) {
+          isLoading.value = false
+          currentPlan.value = event.data as TripPlan
+          pendingMessage.content = '行程已更新！'
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true
@@ -308,7 +331,13 @@ export const usePlanStore = defineStore('plan', () => {
       requirements,
       (event) => {
         if (!guardGenId(genId)) return
-        if (event.type === SSE_EVENTS.PLAN) {
+        if (event.type === SSE_EVENTS.MESSAGE_CHUNK) {
+          pendingMessage.content += event.data.chunk
+          if (!isAssistantMessageAdded) {
+            messages.value.push(pendingMessage)
+            isAssistantMessageAdded = true
+          }
+        } else if (event.type === SSE_EVENTS.PLAN) {
           currentPlan.value = event.data as TripPlan
           isLoading.value = false
           pendingMessage.content = '行程已生成！你可以查看左侧的行程概览。'
@@ -318,7 +347,9 @@ export const usePlanStore = defineStore('plan', () => {
           }
         } else if (event.type === SSE_EVENTS.MESSAGE) {
           isLoading.value = false
-          pendingMessage.content = event.data.content
+          if (event.data.content) {
+            pendingMessage.content = event.data.content
+          }
           if (!isAssistantMessageAdded) {
             messages.value.push(pendingMessage)
             isAssistantMessageAdded = true

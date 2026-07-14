@@ -1,6 +1,6 @@
 import { createDeepAgent, type DeepAgent } from 'deepagents'
 import { ChatDeepSeek } from '@langchain/deepseek'
-import { HumanMessage, SystemMessage } from 'langchain'
+import { HumanMessage, SystemMessage, AIMessageChunk, ToolMessage } from 'langchain'
 import type { TripPlan } from './types'
 import { searchFlights, searchTrains } from './tools/transport'
 import { searchHotels } from './tools/accommodation'
@@ -28,7 +28,7 @@ const STEP_MAP: Record<StepKey, ProgressStep & { id: number }> = {
   generate: { step: 5, id: 5, status: 'running', message: '生成每日行程' },
 }
 
-// Track which tool steps have been emitted to avoid duplicates
+// Track tool-to-progress mapping
 /* eslint-disable @typescript-eslint/naming-convention */
 const toolStepMapping: Record<string, StepKey> = {
   search_flights: 'searchTransport',
@@ -75,48 +75,7 @@ const tripAgent = createDeepAgent({
   ],
 }) as DeepAgent
 
-interface ContentBlock {
-  type: string
-  text?: string
-  reasoning?: string
-}
-
-function getContentBlocks(state: Record<string, unknown>): ContentBlock[] {
-  const messages = state.messages as { content?: unknown }[]
-  const last = messages?.[messages.length - 1]
-  const raw = last?.content
-
-  if (!raw) return []
-
-  if (typeof raw === 'string') {
-    try {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed as ContentBlock[]
-    } catch {
-      // plain string, treat as single text block
-    }
-    return [{ type: 'text', text: raw }]
-  }
-
-  if (Array.isArray(raw)) return raw as ContentBlock[]
-
-  return [{ type: 'text', text: String(raw) }]
-}
-
-function extractReasoning(blocks: ContentBlock[]): string | undefined {
-  return blocks.find((b) => b.type === 'reasoning')?.reasoning
-}
-
-function extractText(blocks: ContentBlock[]): string {
-  const text = blocks.find((b) => b.type === 'text' && b.text)
-  if (text?.text) return text.text
-
-  const joined = blocks
-    .map((b) => b.text || '')
-    .join('')
-    .trim()
-  return joined || ''
-}
+// ─── Helpers ───────────────────────────────────────────
 
 function tryParsePlan(content: string): TripPlan | null {
   try {
@@ -124,27 +83,6 @@ function tryParsePlan(content: string): TripPlan | null {
   } catch {
     return null
   }
-}
-
-function emitResult(blocks: ContentBlock[], onEvent: (e: SSEEvent) => void): void {
-  const reasoning = extractReasoning(blocks)
-  const text = extractText(blocks)
-
-  if (reasoning) {
-    onEvent({ type: 'reasoning', data: { content: reasoning } })
-  }
-
-  const plan = tryParsePlan(text)
-  if (plan && (text.includes('"days"') || text.includes('"title"'))) {
-    onEvent({ type: 'plan', data: plan })
-  } else if (text) {
-    onEvent({ type: 'message', data: { content: text } })
-  }
-}
-
-function emitError(error: unknown, onEvent: (e: SSEEvent) => void, logger: Console): void {
-  logger.error('AI error', error)
-  onEvent({ type: 'error', data: { message: 'AI 服务暂时不可用，请稍后重试。' } })
 }
 
 function emitProgress(onEvent: (e: SSEEvent) => void, stepKey: StepKey): void {
@@ -169,75 +107,126 @@ function finalizeProgress(onEvent: (e: SSEEvent) => void, keys: StepKey[]): void
   }
 }
 
-async function streamWithEvents(
-  run: {
-    toolCalls: AsyncIterable<{ name: string; input: unknown; output: Promise<unknown> }>
-    output: Promise<Record<string, unknown>>
-  },
+function emitError(error: unknown, onEvent: (e: SSEEvent) => void, logger: Console): void {
+  logger.error('AI error', error)
+  onEvent({ type: 'error', data: { message: 'AI 服务暂时不可用，请稍后重试。' } })
+}
+
+// ─── Streaming with token-level output ─────────────────
+
+async function streamWithMessages(
+  messages: Parameters<typeof tripAgent.stream>[0]['messages'],
   onEvent: (e: SSEEvent) => void,
 ): Promise<void> {
-  // Emit initial progress: step 1 quickly
+  // Emit step 1 — read request
   onEvent({
     type: 'progress',
     data: { step: 1, status: 'completed', message: '已读取出行需求' },
   })
 
   const emittedSteps = new Set<StepKey>()
+  let accumulatedContent = ''
 
-  const toolPromise = (async () => {
-    for await (const call of run.toolCalls) {
-      onEvent({ type: 'tool_call', data: { tool: call.name, status: 'start', input: call.input } })
+  // Stream with messages mode for token-level streaming + tool calls
+  const stream = await tripAgent.stream(
+    { messages } as Parameters<typeof tripAgent.stream>[0],
+    { streamMode: 'messages', subgraphs: true } as Record<string, unknown>,
+  )
 
-      // Emit progress mapped from tool name
-      const stepKey = toolStepMapping[call.name]
-      if (stepKey && !emittedSteps.has(stepKey)) {
-        emittedSteps.add(stepKey)
-        emitProgress(onEvent, stepKey)
+  for await (const rawChunk of stream) {
+    // With subgraphs: true, chunk is [namespace, data]
+    // With streamMode "messages", data is [token, metadata]
+    const items = (Array.isArray(rawChunk) ? rawChunk : [rawChunk]) as unknown[]
+    // items = [namespace, data] when subgraphs: true
+    const data = items.length >= 2 ? items[1] : items[0] // eslint-disable-line no-magic-numbers
+
+    // data should be [token, metadata]
+    if (!Array.isArray(data) || data.length < 2) continue // eslint-disable-line no-magic-numbers
+
+    const [token] = data as [unknown, Record<string, unknown>]
+
+    // ── 1. AI text token ──
+    if (token instanceof AIMessageChunk) {
+      const textContent = typeof token.content === 'string' ? token.content : ''
+      const toolCallChunks = token.tool_call_chunks ?? []
+
+      // Pure text token
+      if (textContent && (!toolCallChunks || toolCallChunks.length === 0)) {
+        accumulatedContent += textContent
+        onEvent({ type: 'message_chunk', data: { chunk: textContent } })
       }
 
-      try {
-        const output = await call.output
-        onEvent({ type: 'tool_call', data: { tool: call.name, status: 'end', output } })
-      } catch {
-        onEvent({ type: 'tool_call', data: { tool: call.name, status: 'end' } })
+      // Tool call chunks being constructed
+      if (toolCallChunks && toolCallChunks.length > 0) {
+        for (const tc of toolCallChunks) {
+          if (tc.name) {
+            const stepKey = toolStepMapping[tc.name]
+            if (stepKey && !emittedSteps.has(stepKey)) {
+              emittedSteps.add(stepKey)
+              emitProgress(onEvent, stepKey)
+            }
+
+            onEvent({
+              type: 'tool_call',
+              data: {
+                tool: tc.name,
+                status: 'start',
+                input: tc.args ? JSON.parse(tc.args) : {},
+              },
+            })
+          }
+        }
       }
     }
-  })()
 
-  const textPromise = (async () => {
-    const state = await run.output
-    const blocks = getContentBlocks(state)
+    // ── 2. Tool result ──
+    if (token instanceof ToolMessage) {
+      // Emit comparePrice progress if we had transport tools
+      const stepKey = toolStepMapping[token.name ?? '']
+      if (stepKey && emittedSteps.has(stepKey)) {
+        // Tool finished — will be finalized after all tools
+      }
 
-    // Emit running for steps that may not have been triggered by tools
-    emitProgress(onEvent, 'comparePrice')
-    // Complete all tool-related steps before emitting result
-    finalizeProgress(onEvent, ['searchTransport', 'comparePrice', 'searchPoiHotel'])
+      onEvent({
+        type: 'tool_call',
+        data: { tool: token.name ?? 'unknown', status: 'end', output: token.content },
+      })
+    }
+  }
 
-    // Emit step 5 (generating)
-    onEvent({
-      type: 'progress',
-      data: { step: 5, status: 'running', message: '生成每日行程' },
-    })
+  // ── Stream complete — process final result ──
+  // Complete tool-related progress steps
+  emitProgress(onEvent, 'comparePrice')
+  finalizeProgress(onEvent, ['searchTransport', 'comparePrice', 'searchPoiHotel'])
 
-    emitResult(blocks, onEvent)
+  // Emit step 5 — generating
+  onEvent({
+    type: 'progress',
+    data: { step: 5, status: 'running', message: '生成每日行程' },
+  })
 
-    // Complete step 5
-    onEvent({
-      type: 'progress',
-      data: { step: 5, status: 'completed', message: '行程生成完成' },
-    })
-  })()
+  // Try to parse the complete content as a plan
+  if (accumulatedContent) {
+    const plan = tryParsePlan(accumulatedContent)
+    if (plan && (accumulatedContent.includes('"days"') || accumulatedContent.includes('"title"'))) {
+      onEvent({ type: 'plan', data: plan })
+    } else {
+      onEvent({ type: 'message', data: { content: accumulatedContent } })
+    }
+  }
 
-  await Promise.all([toolPromise, textPromise])
+  // Complete step 5
+  onEvent({
+    type: 'progress',
+    data: { step: 5, status: 'completed', message: '行程生成完成' },
+  })
 }
+
+// ─── Public API ────────────────────────────────────────
 
 export async function streamAgent(message: string, onEvent: (e: SSEEvent) => void): Promise<void> {
   try {
-    const run = await tripAgent.streamEvents(
-      { messages: [new HumanMessage(message)] },
-      { version: 'v3' },
-    )
-    await streamWithEvents(run, onEvent)
+    await streamWithMessages([new HumanMessage(message)], onEvent)
   } catch (error) {
     emitError(error, onEvent, console)
   }
@@ -248,11 +237,7 @@ export async function streamPlanner(
   onEvent: (e: SSEEvent) => void,
 ): Promise<void> {
   try {
-    const run = await tripAgent.streamEvents(
-      { messages: [new HumanMessage(`请规划行程: ${requirements}`)] },
-      { version: 'v3' },
-    )
-    await streamWithEvents(run, onEvent)
+    await streamWithMessages([new HumanMessage(`请规划行程: ${requirements}`)], onEvent)
   } catch (error) {
     emitError(error, onEvent, console)
   }
@@ -264,16 +249,13 @@ export async function streamModifier(
   onEvent: (e: SSEEvent) => void,
 ): Promise<void> {
   try {
-    const run = await tripAgent.streamEvents(
-      {
-        messages: [
-          new SystemMessage(`当前行程:\n${JSON.stringify(currentPlan, null, SPACING)}`),
-          new HumanMessage(`请修改行程: ${request}`),
-        ],
-      },
-      { version: 'v3' },
+    await streamWithMessages(
+      [
+        new SystemMessage(`当前行程:\n${JSON.stringify(currentPlan, null, SPACING)}`),
+        new HumanMessage(`请修改行程: ${request}`),
+      ],
+      onEvent,
     )
-    await streamWithEvents(run, onEvent)
   } catch (error) {
     emitError(error, onEvent, console)
   }
@@ -281,11 +263,7 @@ export async function streamModifier(
 
 export async function streamQA(question: string, onEvent: (e: SSEEvent) => void): Promise<void> {
   try {
-    const run = await tripAgent.streamEvents(
-      { messages: [new HumanMessage(question)] },
-      { version: 'v3' },
-    )
-    await streamWithEvents(run, onEvent)
+    await streamWithMessages([new HumanMessage(question)], onEvent)
   } catch (error) {
     emitError(error, onEvent, console)
   }

@@ -19,6 +19,7 @@ export type SseEvent =
       data: { content: string; knowledgeRefs?: { id: string; title: string }[] }
     }
   | { type: typeof SSE_EVENTS.REASONING; data: { content: string } }
+  | { type: typeof SSE_EVENTS.MESSAGE_CHUNK; data: { chunk: string } }
   | {
       type: typeof SSE_EVENTS.TOOL_CALL
       data: { tool: string; status: 'start' | 'end'; input?: unknown; output?: unknown }

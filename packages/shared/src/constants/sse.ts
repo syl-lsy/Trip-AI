@@ -2,6 +2,7 @@ export const SSE_EVENTS = {
   PROGRESS: 'progress',
   PLAN: 'plan',
   MESSAGE: 'message',
+  MESSAGE_CHUNK: 'message_chunk',
   ERROR: 'error',
   REASONING: 'reasoning',
   TOOL_CALL: 'tool_call',
