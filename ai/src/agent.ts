@@ -86,40 +86,6 @@ const tripAgent = createDeepAgent({
 //   plan         → TripPlan
 //   error        → { message: string }
 
-interface ContentBlock {
-  type: string
-  text?: string
-  reasoning?: string
-}
-
-/** Try to parse accumulated text as a JSON array of ContentBlocks */
-function tryParseContentBlocks(content: string): ContentBlock[] | null {
-  const trimmed = content.trim()
-  if (!trimmed.startsWith('[')) return null
-  try {
-    const parsed = JSON.parse(trimmed)
-    if (Array.isArray(parsed)) return parsed as ContentBlock[]
-  } catch {
-    // Not valid JSON — treat as plain text
-  }
-  return null
-}
-
-/** Extract reasoning text from ContentBlock array */
-function extractReasoning(blocks: ContentBlock[]): string | undefined {
-  return blocks.find((b) => b.type === 'reasoning')?.reasoning
-}
-
-/** Extract text from ContentBlock array */
-function extractText(blocks: ContentBlock[]): string {
-  const textBlock = blocks.find((b) => b.type === 'text' && b.text)
-  if (textBlock?.text) return textBlock.text
-  return blocks
-    .map((b) => b.text || '')
-    .join('')
-    .trim()
-}
-
 /** Try to parse content as TripPlan JSON */
 function tryParsePlan(content: string): TripPlan | null {
   try {
@@ -192,6 +158,14 @@ async function streamWithMessages(
       const tcChunks = anyMsg.tool_call_chunks as
         { name?: string; args?: string; id?: string }[] | undefined
 
+      // Extract reasoning from additional_kwargs (DeepSeek specific)
+      // DeepSeek puts reasoning content in additional_kwargs.reasoning_content
+      const kwargs = anyMsg.additional_kwargs as Record<string, unknown> | undefined
+      const reasoningContent = kwargs?.reasoning_content
+      if (typeof reasoningContent === 'string' && reasoningContent.length > 0) {
+        onEvent({ type: 'reasoning', data: { content: reasoningContent } })
+      }
+
       // Pure text token → emit message_chunk (streaming!)
       if (textContent && (!tcChunks || tcChunks.length === 0)) {
         accumulatedText += textContent
@@ -252,27 +226,8 @@ async function streamWithMessages(
     data: { step: 5, status: 'running', message: '生成每日行程' },
   })
 
-  // Try to parse accumulated text as ContentBlock JSON
-  // DeepSeek sometimes returns [{"type":"reasoning","reasoning":"..."},{"type":"text","text":"..."}]
-  const blocks = tryParseContentBlocks(accumulatedText)
-  if (blocks) {
-    const reasoning = extractReasoning(blocks)
-    const text = extractText(blocks)
-
-    if (reasoning) {
-      onEvent({ type: 'reasoning', data: { content: reasoning } })
-    }
-
-    if (text) {
-      const plan = tryParsePlan(text)
-      if (plan && (text.includes('"days"') || text.includes('"title"'))) {
-        onEvent({ type: 'plan', data: plan })
-      } else {
-        onEvent({ type: 'message', data: { content: text } })
-      }
-    }
-  } else if (accumulatedText) {
-    // Plain text (no ContentBlock structure)
+  // Emit final result — plan or plain message
+  if (accumulatedText) {
     const plan = tryParsePlan(accumulatedText)
     if (plan && (accumulatedText.includes('"days"') || accumulatedText.includes('"title"'))) {
       onEvent({ type: 'plan', data: plan })
