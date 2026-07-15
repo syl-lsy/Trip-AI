@@ -33,15 +33,9 @@ LLM 负责语义判断：识别哪些信息值得永久记录。
 
 ## 后台提取
 
-除了手动写入，系统提供后台记忆提取机制：
+除了手动写入，Plugin 自动在 `session.idle` 时执行跨会话决策提取（`consolidateCrossSession`）和每日笔记同步（`syncMemoryFromDaily`）。
 
-- `/extract-memories` — 扫描近 3 天 daily notes，用规则匹配提取候选记忆并写入
-- `/extract-memories-llm` — 用 LLM 分析对话日志，语义级提取（更精准）
-- `/consolidate-memory` — 运行完整的记忆归并（提取 + 去重 + 清理）
-
-建议每次 dev-cycle 完成后执行一次 `/extract-memories`，确保决策和 Bug 根因不漏记。
-
-当用户说"提取记忆"或"整理记忆"时，执行 `/extract-memories-llm`。
+当用户说"提取记忆"或"整理记忆"时，建议手动检查 `daily/` 和 `MEMORY.md` 的 Auto Memory 区，确认关键决策和 Bug 根因已记录。
 
 ## 预算
 

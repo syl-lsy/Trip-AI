@@ -2,6 +2,7 @@
 
 > 本文档定义项目的纯文件层记忆体系：5 层文件架构。
 > 所有路径相对于 `docs/memory/`。
+> 最后更新：2026-07-15
 
 ## 目录结构
 
@@ -16,6 +17,7 @@ docs/memory/
 ├── daily-archives/        # 每日笔记按月归档
 │   └── YYYY-MM.md         # 合并后的关键条目
 ├── topics/                # 主题深度知识（按需创建）
+├── sessions/              # 会话摘要持久化（Plugin 自动管理，24h TTL 自动清理）
 ├── conversations/         # 对话日志（由 OpenCode 运行时自动生成）
 │   ├── active/            # 最近 5 条活跃会话
 │   └── archives/          # 按月归档
@@ -25,15 +27,32 @@ docs/memory/
 └── heartbeat-state.json   # 心跳状态跟踪
 ```
 
+## Daily Note 格式规范
+
+每日笔记使用结构化前缀标注事件类型，便于自动归档和检索：
+
+| 前缀             | 用途               |
+| ---------------- | ------------------ |
+| `[architecture]` | 架构决策、设计模式 |
+| `[bugfix]`       | Bug 修复           |
+| `[config]`       | 配置变更           |
+| `[decision]`     | 决策记录           |
+| `[enhancement]`  | 功能增强           |
+| `[refactor]`     | 重构               |
+| `[lesson]`       | 经验教训           |
+
+示例：`- [architecture] Phase 2 使用 Deep Agents 框架`
+
 ## 5 层记忆架构
 
-| 层           | 文件                  | 用途                           | 读取频率   | 写入频率     |
-| ------------ | --------------------- | ------------------------------ | ---------- | ------------ |
-| **1. Hot**   | `ACTIVE-CONTEXT.md`   | 当前优先级、阻塞项、进行中工作 | 每次会话   | 每次会话结束 |
-| **2. Warm**  | `MEMORY.md`           | 架构决策、用户偏好、关键配置   | 主要会话   | 每周整理     |
-| **3. Daily** | `daily/YYYY-MM-DD.md` | 原始事件日志                   | 当天+昨天  | 每天追加     |
-| **4. Topic** | `topics/*.md`         | 特定主题深度上下文             | 主题相关时 | 知识增长时   |
-| **5. Cold**  | `archives/`           | 历史归档                       | 极少       | 每季度       |
+| 层           | 文件                  | 用途                           | 读取频率        | 写入频率                |
+| ------------ | --------------------- | ------------------------------ | --------------- | ----------------------- |
+| **1. Hot**   | `ACTIVE-CONTEXT.md`   | 当前优先级、阻塞项、进行中工作 | 每次会话        | 每次会话结束            |
+| **2. Warm**  | `MEMORY.md`           | 架构决策、用户偏好、关键配置   | 主要会话        | 每周整理                |
+| **3. Daily** | `daily/YYYY-MM-DD.md` | 原始事件日志                   | 当天+昨天       | 每天追加                |
+| **4. Topic** | `topics/*.md`         | 特定主题深度上下文             | 主题相关时      | 知识增长时              |
+| **5. Cold**  | `archives/`           | 历史归档                       | 极少            | 每季度                  |
+| —            | `sessions/`           | 会话摘要持久化                 | 自动(compact时) | Plugin 自动写入 24h TTL |
 
 ## Auto Memory（自动记忆）
 
@@ -141,8 +160,34 @@ docs/memory/
 | archives 超过 100 个文件   | 每小时（定时 job）          | 脚本 `gc_archives()` 按文件数量清理                                           |
 | archives 超过 90 天无修改  | 每次 session.idle（Plugin） | Plugin 按 mtime 安全网清理                                                    |
 | heartbeat 超过 30 天未更新 | 每次新会话                  | 自动运行心跳维护                                                              |
+| sessions/ 超过 24h 无修改  | 每次 session.idle（Plugin） | Plugin 自动删除过期 session 摘要文件                                          |
+| topic 超过 90 天无修改     | 每次新会话（手动检查）      | 审查 topic 内容是否准确，过期内容归档到 daily-archives                        |
 
 > **双保险机制**：`scripts/archive-conversations.sh` 每小时运行一次，按**文件数量**清理（>100 保留最新的）；`auto-memory.ts` Plugin 在每次 session 空闲时按**修改时间**清理（>90 天）。两者独立互补——定时脚本是主力，Plugin 是安全网。
+
+## Sessions 目录管理
+
+`sessions/` 目录由 `auto-memory.ts` Plugin 自动管理：
+
+| 项目         | 说明                                                                |
+| ------------ | ------------------------------------------------------------------- |
+| **用途**     | 持久化每次会话的任务、文件、决策、下一步，用于 compact 时恢复上下文 |
+| **创建**     | `session.created` 事件触发 Plugin 创建模板文件                      |
+| **写入**     | `session_update` 工具写入任务/决策/文件/下一步内容                  |
+| **读取**     | `experimental.session.compacting` 事件加载最近 session 摘要         |
+| **清理**     | Plugin `session.idle` 时自动删除 24h 未修改的过期文件               |
+| **文件格式** | Markdown 4 个 section：任务/文件/决策/下一步                        |
+
+## Topic 文件生命周期
+
+`topics/*.md` 按 Agent 命名空间存储主题知识：
+
+| 规则         | 说明                                                                        |
+| ------------ | --------------------------------------------------------------------------- |
+| **创建标准** | 当某个 Agent 积累了 3+ 条独特经验且不适合放在 MEMORY.md 时，创建 topic 文件 |
+| **内容更新** | 每次对应 Agent 完成 dev-cycle 后，如有新知识则追加或修订                    |
+| **过期清理** | 超过 90 天未修改的 topic 文件应在新会话启动时手动审查                       |
+| **归档路径** | 确认过期的 topic 内容可移到 `daily-archives/` 或删除                        |
 
 ## Heartbeat 状态文件
 

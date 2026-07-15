@@ -13,8 +13,8 @@ const SESSION_TTL_MS = 24 * 60 * 60 * 1000
 const ARCHIVE_TTL_MS = 90 * 24 * 60 * 60 * 1000 // 90 days for cold archive GC
 const DAILY_ARCHIVE_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days for daily notes archive
 
-const MAX_ENTRYPOINT_LINES = 200
-const MAX_ENTRYPOINT_BYTES = 25000
+const MAX_ENTRYPOINT_LINES = 250
+const MAX_ENTRYPOINT_BYTES = 30000
 
 const BM25_K1 = 1.5
 const BM25_B = 0.75
@@ -216,14 +216,15 @@ function truncateEntrypointContent(raw: string): string {
   if (lines.length > MAX_ENTRYPOINT_LINES) {
     const kept = lines.slice(0, MAX_ENTRYPOINT_LINES)
     kept.push('')
-    kept.push(`<!-- truncation: exceeded ${MAX_ENTRYPOINT_LINES} line limit -->`)
+    kept.push(`<!-- truncated at ${MAX_ENTRYPOINT_LINES} lines — split deep topics to topics/ -->`)
     lines = kept
   }
   let content = lines.join('\n')
   const encoder = new TextEncoder()
   while (encoder.encode(content).length > MAX_ENTRYPOINT_BYTES && lines.length > 10) {
     lines.splice(-2, 0, '')
-    lines[lines.length - 1] = `<!-- truncation: exceeded ${MAX_ENTRYPOINT_BYTES} byte limit -->`
+    lines[lines.length - 1] =
+      `<!-- truncated at ${MAX_ENTRYPOINT_BYTES} bytes — split deep topics to topics/ -->`
     content = lines.join('\n')
   }
   return content
@@ -323,14 +324,23 @@ async function consolidateCrossSession(base: string): Promise<void> {
   for (const f of mdFiles.slice(0, 3)) {
     const content = await readSafe(join(sDir, f))
     const decisionMatch = content.match(/## 决策\n\n([\s\S]*?)(?=\n## |$)/)
-    if (decisionMatch) recent.push(decisionMatch[1])
+    if (decisionMatch) {
+      const decisions = decisionMatch[1]
+        .split('\n')
+        .map((l) => l.trim())
+        .filter(Boolean)
+      const valid = decisions.filter(
+        (d) => d.length > 10 && d.startsWith('-') && !d.startsWith('##') && !d.includes('下一步'),
+      )
+      if (valid.length > 0) recent.push(valid.join('\n'))
+    }
   }
 
   const allDecisions = recent
     .join('\n')
     .split('\n')
     .map((l) => l.trim())
-    .filter(Boolean)
+    .filter((l) => l.length > 10 && !l.startsWith('##') && !l.includes('下一步'))
   const seen = new Set<string>()
   const common: string[] = []
   for (const d of allDecisions) {
@@ -344,7 +354,7 @@ async function consolidateCrossSession(base: string): Promise<void> {
     const existing = await readSafe(memPath)
     const marker = '## Auto Memory（AI 自动记录）'
     const lines = common.map((d) => `- ${today()} | cross-session | ${d.replace(/^- /, '')}`)
-    const toAdd = lines.filter((l) => !existing.includes(l.slice(0, 60)))
+    const toAdd = lines.filter((l) => !existing.includes(l.slice(0, 80)))
     if (toAdd.length > 0) {
       const parts = existing.includes(marker) ? existing.split(marker) : [existing, '']
       const updated = `${parts[0]}${marker}\n${toAdd.join('\n')}\n${parts[1] || ''}`
@@ -360,7 +370,11 @@ async function syncMemoryFromDaily(base: string): Promise<void> {
   const content = await readSafe(todayPath)
   const decisionLines = content
     .split('\n')
-    .filter((l) => /^- \[?(?:决策|decision|arch|架构|决定|选择)\]?/i.test(l))
+    .filter((l) =>
+      /^- \[(?:architecture|bugfix|config|decision|enhancement|refactor|lesson|架构|决策|bug|配置|经验|决定|选择)\]/.test(
+        l,
+      ),
+    )
 
   if (decisionLines.length === 0) return
 
@@ -369,11 +383,10 @@ async function syncMemoryFromDaily(base: string): Promise<void> {
   const marker = '## Auto Memory（AI 自动记录）'
 
   const lines = decisionLines.map((l) => {
-    const clean = l.replace(/^- \[?(?:决策|decision|arch|架构|决定|选择)\]?\s*/i, '')
-    return `- ${today()} | decision | ${clean}`
+    return l.replace(/^-\s*\[.*?\]\s*/, `- ${today()} | `)
   })
 
-  const toAdd = lines.filter((l) => !existing.includes(l.slice(0, 60)))
+  const toAdd = lines.filter((l) => !existing.includes(l.slice(0, 80)))
   if (toAdd.length === 0) return
 
   if (existing.includes(marker)) {
@@ -440,7 +453,11 @@ export const AutoMemoryPlugin: Plugin = async ({ client, directory }) => {
         const content = await readFile(fp, 'utf-8')
         const keyLines = content
           .split('\n')
-          .filter((l) => /^- \[(?:decision|config|bugfix|lesson|architecture|preference)\]/.test(l))
+          .filter((l) =>
+            /^- \[(?:architecture|bugfix|config|decision|enhancement|lesson|refactor|preference)\]/.test(
+              l,
+            ),
+          )
           .join('\n')
 
         const monthKey = dateMatch[1].slice(0, 7)
@@ -484,7 +501,11 @@ export const AutoMemoryPlugin: Plugin = async ({ client, directory }) => {
       const todayContent = await readSafe(todayPath)
       const decisionLines = todayContent
         .split('\n')
-        .filter((l) => /^- \[?(?:决策|decision|arch|架构)\]?/i.test(l))
+        .filter((l) =>
+          /^- \[(?:architecture|bugfix|config|decision|enhancement|refactor|lesson|架构|决策|bug|配置|经验|决定|选择)\]/.test(
+            l,
+          ),
+        )
       if (decisionLines.length > 0) {
         output.context.push(`## 今日决策\n\n${decisionLines.join('\n')}`)
       }
@@ -568,8 +589,8 @@ export const AutoMemoryPlugin: Plugin = async ({ client, directory }) => {
           if (summary) {
             await appendToDaily(base, `\n### ${title}\n\n${summary}\n`)
           }
-        } catch {
-          // SDK not available
+        } catch (err) {
+          console.error('[auto-memory] session.idle: failed to fetch session summary', err)
         }
       }
 
@@ -577,14 +598,14 @@ export const AutoMemoryPlugin: Plugin = async ({ client, directory }) => {
         await gcOldFiles(spilloverDir(base), SPILLOVER_TTL_MS, (name: string) =>
           name.endsWith('.txt'),
         )
-      } catch {
-        // silent
+      } catch (err) {
+        console.error('[auto-memory] gcOldFiles spillover failed', err)
       }
 
       try {
         await gcOldFiles(sessionsDir(base), SESSION_TTL_MS, (name: string) => name.endsWith('.md'))
-      } catch {
-        // silent
+      } catch (err) {
+        console.error('[auto-memory] gcOldFiles sessions failed', err)
       }
 
       try {
@@ -593,8 +614,8 @@ export const AutoMemoryPlugin: Plugin = async ({ client, directory }) => {
           ARCHIVE_TTL_MS,
           (name: string) => name.endsWith('.md') && name !== 'INDEX.md',
         )
-      } catch {
-        // silent
+      } catch (err) {
+        console.error('[auto-memory] gcOldFiles archive failed', err)
       }
 
       try {
@@ -632,7 +653,7 @@ export const AutoMemoryPlugin: Plugin = async ({ client, directory }) => {
 
         hb.history = hb.history || []
         const lastEntry = hb.history[hb.history.length - 1]
-        if (!lastEntry || lastEntry.date !== today() || lastEntry.action !== 'auto_flush') {
+        if (!lastEntry || !(lastEntry.date === today() && lastEntry.action === 'auto_flush')) {
           hb.history.push({
             date: today(),
             action: 'auto_flush',
@@ -642,20 +663,20 @@ export const AutoMemoryPlugin: Plugin = async ({ client, directory }) => {
         if (hb.history.length > 50) hb.history = hb.history.slice(-50)
 
         await writeFile(hbPath, JSON.stringify(hb, null, 2), 'utf-8')
-      } catch {
-        // silent
+      } catch (err) {
+        console.error('[auto-memory] heartbeat update failed', err)
       }
 
       try {
         await consolidateCrossSession(base)
-      } catch {
-        // silent
+      } catch (err) {
+        console.error('[auto-memory] consolidateCrossSession failed', err)
       }
 
       try {
         await syncMemoryFromDaily(base)
-      } catch {
-        // silent
+      } catch (err) {
+        console.error('[auto-memory] syncMemoryFromDaily failed', err)
       }
 
       try {
@@ -663,8 +684,8 @@ export const AutoMemoryPlugin: Plugin = async ({ client, directory }) => {
         if (archived > 0) {
           await appendToDaily(base, `- 归档: ${archived} 篇旧每日笔记`)
         }
-      } catch {
-        // silent
+      } catch (err) {
+        console.error('[auto-memory] gcOldDailyNotes failed', err)
       }
     },
 
