@@ -1,8 +1,10 @@
 # Auto Memory 指令
 
-Auto Memory 采用 **Plugin 运行时钩子 + LLM 语义判断** 混合架构。
-机械操作（每日笔记创建、文件修改记录、压缩上下文保留、心跳更新）由 Plugin 自动处理。
-LLM 负责语义判断：识别哪些信息值得永久记录。
+Auto Memory 采用 **Plugin 运行时钩子 + 自动 LLM 提取 + 手动补充** 三层架构。
+
+- **机械操作**（每日笔记创建、文件修改记录、心跳更新）→ Plugin 自动
+- **语义提取**（架构决策/Bug根因/用户偏好/经验教训）→ Plugin 在 session.idle 时自动调用 LLM 提取
+- **手动补充** → 调用 `memory_write` 工具
 
 ## 检查清单
 

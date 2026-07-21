@@ -106,6 +106,30 @@ Last updated: 2026-07-15
 
 ## Auto Memory（AI 自动记录）
 
+- 2026-07-21 | auto-memory.ts: session.idle 自动调用 LLM(client.session.prompt + json_schema) 提取记忆，withMemoryLock 互斥锁防竞态，safeError 脱敏日志
+- 2026-07-21 | truncateEntrypointContent: lines.splice(-2,0,'') 插入非删除导致死循环 → 改为 lines.pop()
+- 2026-07-21 | queryContextMode: execSync 阻塞事件循环 10s → 改为 promisify(exec) 异步调用
+
+- 2026-07-21 | bugfix | queryContextMode: execSync 阻塞事件循环 10s → 改为 promisify(exec) 异步调用
+
+- 2026-07-21 | bugfix | truncateEntrypointContent: lines.splice(-2,0,'') 插入非删除导致死循环 → 改为 lines.pop()
+
+- 2026-07-21 | architecture | auto-memory.ts: session.idle 自动调用 LLM(client.session.prompt + json_schema) 提取记忆，withMemoryLock 互斥锁防竞态，safeError 脱敏日志
+
+- 2026-07-15 | opencode.json: 添加 markitdown MCP 服务器 (Docker 模式) — docker run --rm -i -v workspace:/workspace mcp/markitdown，暴露 convert_to_markdown 1 个工具，支持 file/http/https/data URI 转 Markdown
+
+- 2026-07-15 | config | opencode.json: 添加 markitdown MCP 服务器 (Docker 模式) — docker run --rm -i -v workspace:/workspace mcp/markitdown，暴露 convert_to_markdown 1 个工具，支持 file/http/https/data URI 转 Markdown
+
+- 2026-07-15 | opencode.json: 添加 crawl4ai MCP 服务器 (Docker 模式) — docker run --rm -i uysalsadi/crawl4ai-mcp-server:latest，暴露 scrape/crawl/crawl_site/crawl_sitemap 4 个工具
+
+- 2026-07-15 | config | opencode.json: 添加 crawl4ai MCP 服务器 (Docker 模式) — docker run --rm -i uysalsadi/crawl4ai-mcp-server:latest，暴露 scrape/crawl/crawl_site/crawl_sitemap 4 个工具
+
+- 2026-07-15 | 记忆系统 9 问题修复：清理 MEMORY.md 垃圾/cross-session 噪音、heartbeat 时间序、ACTIVE-CONTEXT 刷新、Plugin 逻辑修复、补充 sessions/topic 规则
+- 2026-07-15 | auto-memory.ts: 跨 session 提取时 `##` 节标题被当作决策写入 → filter 加 `!d.startsWith('##')`
+- 2026-07-15 | auto-memory.ts: auto_flush 去重只检查 date 未检查 action → 改为 `lastEntry.date===today() && lastEntry.action==='auto_flush'`
+- 2026-07-15 | auto-memory.ts: 6 处 silent catch 导致错误无法追溯 → 全部改为 `console.error('[auto-memory]', err)`
+- 2026-07-15 | dev-cycle 流程：小修复（9 问题）只需补文档，无需跑完整 8 步流水线
+
 - 2026-07-15 | decision | dev-cycle 流程：小修复（9 问题）只需补文档，无需跑完整 8 步流水线
 
 - 2026-07-15 | cross-session | ## 下一步

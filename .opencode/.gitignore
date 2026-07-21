@@ -5,3 +5,7 @@ bun.lock
 .gitignore
 secrets
 skills/canvas-design/canvas-fonts/
+__pycache__/
+pnpm-lock.yaml
+plans/
+mcp-servers/opencode-docs-mcp/

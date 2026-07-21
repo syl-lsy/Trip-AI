@@ -9,7 +9,7 @@
       "type": "local",
       "command": ["npx", "-y", "tavily-mcp@latest"],
       "environment": {
-        "TAVILY_API_KEY": "{file:./secrets/tavily-api-key}"
+        "TAVILY_API_KEY": "{file:.opencode/secrets/tavily-api-key}"
       },
       "enabled": true,
       "timeout": 60000
@@ -24,7 +24,7 @@
       "type": "remote",
       "url": "https://mcp.bochaai.com/mcp",
       "headers": {
-        "Authorization": "Bearer {file:./secrets/bocha-api-key}"
+        "Authorization": "Bearer {file:.opencode/secrets/bocha-api-key}"
       },
       "enabled": true,
       "timeout": 60000
@@ -41,31 +41,74 @@
       "enabled": true,
       "timeout": 60000
     },
-    "chrome-mcp": {
-      "type": "local",
-      "command": [
-        "node",
-        "/Users/lsygcy1314/Library/pnpm/global/5/node_modules/mcp-chrome-bridge/dist/mcp/mcp-server-stdio.js"
-      ],
-      "enabled": true,
-      "timeout": 60000
-    },
+    // "chrome-mcp": {
+    //   "type": "local",
+    //   "command": [
+    //     "node",
+    //     "/Users/lsygcy1314/Library/pnpm/global/5/node_modules/mcp-chrome-bridge/dist/mcp/mcp-server-stdio.js"
+    //   ],
+    //   "enabled": true,
+    //   "timeout": 60000
+    // },
     "chrome-devtools": {
       "type": "local",
-      "command": ["npx", "-y", "chrome-devtools-mcp@latest"]
+      "command": ["npx", "-y", "chrome-devtools-mcp@latest"],
+      "enabled": true,
+      "timeout": 30000
     },
     "opencode-docs": {
       "type": "local",
       "command": ["node", ".opencode/mcp-servers/opencode-docs-mcp/dist/index.js"],
       "enabled": true,
       "timeout": 30000
+    },
+    // "crawl4ai": {
+    //   "type": "local",
+    //   "command": [
+    //     "docker",
+    //     "run", "--rm", "-i",
+    //     "--volume", "/tmp/crawl4ai-crawls:/app/crawls",
+    //     "uysalsadi/crawl4ai-mcp-server:latest"
+    //   ],
+    //   "enabled": true,
+    //   "timeout": 120000
+    // },
+    // "markitdown": {
+    //   "type": "local",
+    //   "command": [
+    //     "docker",
+    //     "run",
+    //     "-i",
+    //     "--rm",
+    //     "-v",
+    //     "/Users/lsygcy1314/Documents/my-project/trip-planner:/workspace",
+    //     "mcp/markitdown"
+    //   ],
+    //   "enabled": true,
+    //   "timeout": 60000
+    // },
+    "browser-use": {
+      "type": "local",
+      "command": [
+        "/Users/lsygcy1314/Library/Python/3.9/bin/uvx",
+        "--from",
+        "browser-use[cli]",
+        "browser-use",
+        "--mcp"
+      ],
+      "environment": {
+        "OPENAI_BASE_URL": "https://opencode.ai/zen/go/v1",
+        "BROWSER_USE_LLM_MODEL": "deepseek-v4-flash"
+      },
+      "enabled": true,
+      "timeout": 120000
     }
   },
   "agent": {
     "build": {
       "mode": "primary",
       "model": "opencode-go/deepseek-v4-flash",
-      "prompt": "{file:prompts/build.txt}",
+      "prompt": "{file:.opencode/prompts/build.txt}",
       "permission": { "edit": "allow", "bash": "allow" }
     },
     "plan": {
@@ -79,7 +122,7 @@
       "model": "opencode-go/deepseek-v4-flash",
       "temperature": 0.3,
       "top_p": 0.3,
-      "prompt": "{file:prompts/coordinator.txt}",
+      "prompt": "{file:.opencode/prompts/coordinator.txt}",
       "permission": { "edit": "deny", "bash": "deny" }
     },
     "planner": {
@@ -88,7 +131,7 @@
       "model": "opencode-go/deepseek-v4-flash",
       "temperature": 0.3,
       "top_p": 0.3,
-      "prompt": "{file:prompts/planner.txt}",
+      "prompt": "{file:.opencode/prompts/planner.txt}",
       "permission": { "edit": "deny", "bash": "deny" }
     },
     "frontend-dev": {
@@ -97,7 +140,7 @@
       "model": "opencode-go/deepseek-v4-flash",
       "temperature": 0.3,
       "top_p": 0.4,
-      "prompt": "{file:prompts/frontend-dev.txt}",
+      "prompt": "{file:.opencode/prompts/frontend-dev.txt}",
       "permission": { "edit": "allow", "bash": "allow" }
     },
     "backend-dev": {
@@ -106,7 +149,7 @@
       "model": "opencode-go/deepseek-v4-flash",
       "temperature": 0.3,
       "top_p": 0.4,
-      "prompt": "{file:prompts/backend-dev.txt}",
+      "prompt": "{file:.opencode/prompts/backend-dev.txt}",
       "permission": { "edit": "allow", "bash": "allow" }
     },
     "ai-dev": {
@@ -115,7 +158,7 @@
       "model": "opencode-go/deepseek-v4-flash",
       "temperature": 0.3,
       "top_p": 0.4,
-      "prompt": "{file:prompts/ai-dev.txt}",
+      "prompt": "{file:.opencode/prompts/ai-dev.txt}",
       "permission": { "edit": "allow", "bash": "allow" }
     },
     "tester": {
@@ -124,8 +167,8 @@
       "model": "opencode-go/deepseek-v4-flash",
       "temperature": 0.2,
       "top_p": 0.2,
-      "prompt": "{file:prompts/tester.txt}",
-      "permission": { "edit": "deny" }
+      "prompt": "{file:.opencode/prompts/tester.txt}",
+      "permission": { "edit": "deny", "bash": "deny" }
     },
     "browser-verifier": {
       "description": "UI 视觉验证 — 使用 Chrome/browser MCP 验证页面渲染效果",
@@ -133,7 +176,7 @@
       "model": "opencode-go/deepseek-v4-flash",
       "temperature": 0.2,
       "top_p": 0.2,
-      "prompt": "{file:prompts/browser-verifier.txt}",
+      "prompt": "{file:.opencode/prompts/browser-verifier.txt}",
       "permission": { "edit": "deny", "bash": "allow" }
     },
     "verifier": {
@@ -142,8 +185,8 @@
       "model": "opencode-go/deepseek-v4-pro",
       "temperature": 0.4,
       "top_p": 0.5,
-      "prompt": "{file:prompts/verifier.txt}",
-      "permission": { "edit": "deny" }
+      "prompt": "{file:.opencode/prompts/verifier.txt}",
+      "permission": { "edit": "deny", "bash": "deny" }
     },
     "reviewer": {
       "description": "代码审查 — 安全、性能、可维护性",
@@ -151,8 +194,8 @@
       "model": "opencode-go/deepseek-v4-pro",
       "temperature": 0.1,
       "top_p": 0.1,
-      "prompt": "{file:prompts/reviewer.txt}",
-      "permission": { "edit": "deny" }
+      "prompt": "{file:.opencode/prompts/reviewer.txt}",
+      "permission": { "edit": "deny", "bash": "deny" }
     },
     "docs-writer": {
       "description": "知识库工程师 — 文档撰写与维护",
@@ -160,7 +203,7 @@
       "model": "opencode-go/deepseek-v4-flash",
       "temperature": 0.5,
       "top_p": 0.6,
-      "prompt": "{file:prompts/docs-writer.txt}",
+      "prompt": "{file:.opencode/prompts/docs-writer.txt}",
       "permission": { "edit": "allow", "bash": "deny" }
     }
   }
